@@ -1,0 +1,106 @@
+service: themagicai-app
+package:
+  individually: true
+provider:
+  name: aws
+  runtime: nodejs18.x
+  tracing:
+    lambda: true
+  region: eu-west-1
+  memorySize: 1024
+  timeout: 90
+  stage: development
+  iam:
+    role: ExecutionRole
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - cognito-idp:AdminInitiateAuth
+        - cognito-idp:signUp
+        - cognito-idp:confirmSignUp
+      Resource: "*"
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 4000
+  allowedHeaders:
+    - Accept
+    - Content-Type
+    - Content-Length
+    - Authorization
+  stage: ${opt:stage, self:provider.stage}
+  bucket: ${self:service}-${self:provider.stage}
+  optimize:
+    external:
+      - aws-jwt-verify
+
+functions:
+  upload-image:
+    handler: api/utils/upload-image.handler
+    description: POST /api/upload-image/
+    events:
+      - http:
+          path: /api/upload-image
+          method: post
+          cors:
+            origin: "*"
+            headers: ${self:custom.allowedHeaders
+
+resources:
+  Resources:
+    ExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:service}-${self:custom.stage}-execution-role
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+              Resource:
+                - Fn::GetAtt: [receiverQueue, Arn]
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+          - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        Policies:
+          - PolicyName: ${self:service}-${self:custom.stage}-execution-policy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - s3:*
+                  Resource:
+                    - "arn:aws:s3:::${self:custom.bucket}/*"
+                    - "*"
+                - Effect: "Allow"
+                  Action:
+                    - cognito-idp:*
+                  Resource:
+                    - "*"
+    StorageBucket:
+      Type: "AWS::S3::Bucket"
+      Properties:
+        BucketName: ${self:custom.bucket}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - "*"
+              AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000

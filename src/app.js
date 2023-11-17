@@ -17,4 +17,4 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).send();
 });
 
-module.exports.handler = serverless(app);
+export const handler = serverless(app);

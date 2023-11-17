@@ -40,17 +40,8 @@ functions:
   app:
     handler: src/app.handler
     events:
-      - http:
-          path: ANY /
-          cors:
-            origin: "*"
-            headers: ${self:custom.allowedHeaders}
-
-      - http:
-          path: ANY /{proxy+}
-          cors:
-            origin: "*"
-            headers: ${self:custom.allowedHeaders}
+      - http: ANY /
+      - http: ANY /{proxy+}
 
 resources:
   Resources:

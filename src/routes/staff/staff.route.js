@@ -229,7 +229,7 @@ router.post("/update", async (req, res) => {
         location = uploadData.Location;
       } catch (error) {
         console.log(error);
-        return utils.sendResponse(200, { statusCode: 500, error });
+        return res.status(200).json({ statusCode: 500, error });
       }
     }
 

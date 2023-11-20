@@ -129,7 +129,7 @@ router.post("/addtrack", async (req, res) => {
 
     await dynamoDb.update(staffParams).promise();
 
-    return utils.sendResponse(200, {
+    return res.status(200).json({
       statusCode: 200,
       message: `${Item.name} track data has been successfully created`,
     });
@@ -339,7 +339,7 @@ router.post("/getimage", async (req, res) => {
       var base64Data = data.Body.toString("base64");
     } catch (error) {
       console.log(error);
-      return utils.sendResponse(200, { statusCode: 500, error });
+      return res.status(200).json({ statusCode: 500, error });
     }
 
     return res.status(200).json({

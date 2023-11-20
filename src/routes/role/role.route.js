@@ -10,7 +10,7 @@ router.post("/create", async (req, res) => {
   try {
     const timeStamp = new Date().getTime();
     const data = req.body;
-    if (!body) {
+    if (!data) {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }
 
@@ -41,7 +41,7 @@ router.post("/create", async (req, res) => {
 router.post("/fetch", async (req, res) => {
   try {
     const data = req.body;
-    if (!body) {
+    if (!data) {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }
 
@@ -71,7 +71,7 @@ router.post("/update", async (req, res) => {
   try {
     const timeStamp = new Date().getTime();
     const data = req.body;
-    if (!body) {
+    if (!data) {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }
 
@@ -105,7 +105,7 @@ router.post("/update", async (req, res) => {
 router.post("/delete", async (req, res) => {
   try {
     const data = req.body;
-    if (!body) {
+    if (!data) {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }
 
@@ -131,7 +131,7 @@ router.post("/staffrole", async (req, res) => {
   try {
     const timeStamp = new Date().getTime();
     const data = req.body;
-    if (!body) {
+    if (!data) {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }
 

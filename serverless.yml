@@ -1,4 +1,4 @@
-service: themagicai-app
+service: teamixo-app
 useDotenv: true
 package:
   individually: true
@@ -7,13 +7,13 @@ provider:
   runtime: nodejs18.x
   tracing:
     lambda: true
-  region: us-east-2
+  region: eu-west-2
   memorySize: 1024
   timeout: 90
   stage: development
   environment:
-    USER_POOL_ID: "us-east-2_wBKweu0hS"
-    CLIENT_ID: "6ahaf55gr3cc6akbc12g66gfrm"
+    USER_POOL_ID: "eu-west-2_0JgGQUwWI"
+    CLIENT_ID: "4es6mafef0300r7je1fpa7ui1h"
     S3_BUCKET_NAME: ${self:custom.bucket}
     DEFAULT_AVATAR: "https://saas-app-development.s3.eu-west-2.amazonaws.com/Home/Avatars/070e9511-1aed-46f7-a29b-d75ea10f2bb7/avatar1695913452996.png"
 
@@ -45,14 +45,19 @@ functions:
     role: iamCustomRole
     handler: src/app.handler
     events:
-      - http: ANY /{proxy+}
+      - http:
+          path: /{proxy+}
+          method: any
+          cors:
+            origin: "*"
+            headers: ${self:custom.allowedHeaders}
 
 resources:
   Resources:
     UserPool:
       Type: AWS::Cognito::UserPool
       Properties:
-        UserPoolName: test-user-pool
+        UserPoolName: teamixo-app-user
         Schema:
           - Name: email
             Required: true
@@ -65,7 +70,7 @@ resources:
     UserClient:
       Type: AWS::Cognito::UserPoolClient
       Properties:
-        ClientName: test-user-client
+        ClientName: teamixo-app-client
         GenerateSecret: false
         UserPoolId: { Ref: UserPool }
         AccessTokenValidity: 5

@@ -8,7 +8,7 @@ const s3bucket = new AWS.S3();
 
 const router = Router();
 
-router.post("/companies", async (req, res) => {
+router.get("/companies", async (req, res) => {
   try {
     const companyParams = {
       TableName: "company_list",

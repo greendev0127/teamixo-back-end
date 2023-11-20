@@ -173,7 +173,7 @@ router.post("/create", async (req, res) => {
 
 router.post("/fetch", async (req, res) => {
   try {
-    const data = req.data;
+    const data = req.body;
     if (!data) {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }

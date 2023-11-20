@@ -102,8 +102,6 @@ router.post("/addtrack", async (req, res) => {
       site_id = TableName;
     }
 
-    console.log(data.staff_id);
-
     const staffParams = {
       TableName: "staff_list",
       Key: {

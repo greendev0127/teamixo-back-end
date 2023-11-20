@@ -159,13 +159,11 @@ router.post("/changepin", async (req, res) => {
       ReturnValues: "ALL_NEW",
     };
     await dynamoDb.update(staffParams).promise();
-    return res
-      .status(200)
-      .json({
-        statusCode: 200,
-        message: "Pin has been successfully updated",
-        response,
-      });
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Pin has been successfully updated",
+      response,
+    });
   } catch (error) {
     return res.status(200).json(error);
   }

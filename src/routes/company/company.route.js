@@ -20,7 +20,7 @@ router.post("/create", async (req, res) => {
       organization_id: data.organizationId,
       name: data.name,
       description: data.description,
-      logo: "https://saas-app-development.s3.eu-west-2.amazonaws.com/Home/Logos/default/default_1695705510183.png",
+      logo: "https://teamixo-app-development.s3.eu-west-2.amazonaws.com/Home/Logos/default/company.png",
       date_format: "YYYY-MM-DD",
       timeZone: "Etc/GMT",
       type: 1,
@@ -48,7 +48,6 @@ router.post("/create", async (req, res) => {
 router.post("/fetch", async (req, res) => {
   try {
     const data = req.body;
-    console.log("11111111111", data);
     if (!data) {
       return res.status({ statusCode: 400, message: "Bad Request" });
     }
@@ -166,13 +165,13 @@ router.post("/update", async (req, res) => {
           ReturnValues: "ALL_NEW",
         };
 
-    const res = await dynamoDb.update(params).promise();
+    const result = await dynamoDb.update(params).promise();
 
     return res.status(200).json({
       statusCode: 200,
       message: "Company data has been successfully updated",
       data: location,
-      response: res,
+      response: result,
     });
   } catch (error) {
     return res.status(200).json(error);

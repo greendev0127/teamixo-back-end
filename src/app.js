@@ -1,12 +1,16 @@
 import express from "express";
 import serverless from "serverless-http";
 import cors from "cors";
+import bodyParser from "body-parser";
 
 import routes from "./routes";
 
 const app = express();
 
 app.use(cors());
+
+app.use(bodyParser.json({ limit: "10mb" }));
+app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
 
 app.use(express.json());
 

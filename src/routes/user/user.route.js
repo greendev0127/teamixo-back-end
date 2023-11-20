@@ -17,8 +17,6 @@ router.post("/signup", async (req, res) => {
     }
     const { CLIENT_ID } = process.env;
 
-    console.log(CLIENT_ID, uuid.v1());
-
     const userId = uuid.v1();
 
     const params = {

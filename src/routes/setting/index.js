@@ -1,9 +1,9 @@
 import { Router } from "express";
 
-import db from "./db.route";
+import setting from "./setting.route";
 
 const router = Router();
 
-router.use("/", db);
+router.use("/", setting);
 
 export default router;

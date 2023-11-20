@@ -12,6 +12,10 @@ provider:
   timeout: 90
   stage: development
   environment:
+    USER_POOL_ID: "us-east-2_wBKweu0hS"
+    CLIENT_ID: "6ahaf55gr3cc6akbc12g66gfrm"
+    S3_BUCKET_NAME: ${self:custom.bucket}
+    DEFAULT_AVATAR: "https://saas-app-development.s3.eu-west-2.amazonaws.com/Home/Avatars/070e9511-1aed-46f7-a29b-d75ea10f2bb7/avatar1695913452996.png"
 
 plugins:
   - serverless-webpack
@@ -38,13 +42,36 @@ custom:
 
 functions:
   app:
+    role: iamCustomRole
     handler: src/app.handler
     events:
-      - http: ANY /
       - http: ANY /{proxy+}
 
 resources:
   Resources:
+    UserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: test-user-pool
+        Schema:
+          - Name: email
+            Required: true
+            Mutable: true
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 6
+        AutoVerifiedAttributes: ["email"]
+        UsernameAttributes: ["email"]
+    UserClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: test-user-client
+        GenerateSecret: false
+        UserPoolId: { Ref: UserPool }
+        AccessTokenValidity: 5
+        IdTokenValidity: 5
+        ExplicitAuthFlows:
+          - "ADMIN_NO_SRP_AUTH"
     StorageBucket:
       Type: "AWS::S3::Bucket"
       Properties:
@@ -62,3 +89,29 @@ resources:
                 - DELETE
                 - HEAD
               MaxAge: 3000
+    iamCustomRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:service}-${self:custom.stage}-dynamodb-role
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        Policies:
+          - PolicyName: ${self:service}-${self:custom.stage}-dynamodb-policy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:*
+                    - s3:*
+                    - ses:*
+                    - cognito-idp:*
+                  Resource:
+                    - "*"

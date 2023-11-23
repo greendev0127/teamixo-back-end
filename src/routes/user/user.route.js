@@ -66,6 +66,8 @@ router.post("/signup", async (req, res) => {
       organization_id: response.UserSub,
       email: data.email,
       name: data.fname,
+      first_name: data.firstName,
+      last_name: data.lastName,
       avatar: process.env.DEFAULT_AVATAR,
       pin: pin,
       role: ["owner"],

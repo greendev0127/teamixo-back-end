@@ -15,6 +15,7 @@ import contact from "./contact";
 import company from "./company";
 import client from "./client";
 import admin from "./admin";
+import log from "./logs";
 
 const router = Router();
 
@@ -33,5 +34,6 @@ router.use("/support", contact);
 router.use("/company", company);
 router.use("/client", client);
 router.use("/admin", admin);
+router.use("/logs", log);
 
 export default router;

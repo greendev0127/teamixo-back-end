@@ -142,6 +142,7 @@ router.post("/updateticket", async (req, res) => {
 router.post("/fetchticket", async (req, res) => {
   try {
     const data = req.body;
+
     if (!data) {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }

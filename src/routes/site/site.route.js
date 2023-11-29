@@ -81,17 +81,19 @@ router.post("/update", async (req, res) => {
         "#name_text": "name",
         "#description_text": "description",
         "#round": "round",
+        "#radius": "radius",
         "#remote": "remote",
       },
       ExpressionAttributeValues: {
         ":name": data.name,
         ":description": data.description,
         ":round": data.round,
+        ":radius": data.radius,
         ":remote": data.remote,
         ":updateAt": timeStamp,
       },
       UpdateExpression:
-        "SET #name_text = :name, #description_text = :description, #round = :round, #remote = :remote, updateAt = :updateAt",
+        "SET #name_text = :name, #description_text = :description, #round = :round, #radius = :radius, #remote = :remote, updateAt = :updateAt",
       ReturnValues: "ALL_NEW",
     };
 

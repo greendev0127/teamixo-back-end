@@ -5,7 +5,7 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 const router = Router();
 
-router.post("/reportsetting", async (req, res) => {
+router.post("/report", async (req, res) => {
   try {
     const timeStamp = new Date().getTime();
     const data = req.body;

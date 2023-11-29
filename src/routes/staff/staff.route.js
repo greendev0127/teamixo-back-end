@@ -85,7 +85,10 @@ router.post("/create", async (req, res) => {
 
     await dynamoDb.put(staffParams).promise();
 
-    const inviteLink = "https://teamixo-server.vercel.app/invite/" + Item.id;
+    const inviteLink =
+      data.level === 2
+        ? "https://teamixo-server.vercel.app/invite/" + Item.id
+        : "https://teamixo-user.vercel.app/invite/" + Item.id;
 
     var emailParams = {
       Destination: {

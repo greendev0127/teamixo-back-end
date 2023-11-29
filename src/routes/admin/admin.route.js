@@ -5,6 +5,7 @@ const uuid = require("uuid");
 const cognito = new AWS.CognitoIdentityServiceProvider();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const s3bucket = new AWS.S3();
+var ddb = new AWS.DynamoDB({ apiVersion: "2012-08-10" });
 
 const router = Router();
 
@@ -100,7 +101,7 @@ router.post("/deletesites", async (req, res) => {
         TableName: item.table_name,
       };
 
-      await dynamoDb.deleteTable(params).promise();
+      await ddb.deleteTable(params).promise();
       const deleteParams = {
         TableName: "site_list",
         Key: {
@@ -115,6 +116,7 @@ router.post("/deletesites", async (req, res) => {
       message: "Sites data has been successfully deleted",
     });
   } catch (error) {
+    console.log(error);
     return res.status(200).json(error);
   }
 });

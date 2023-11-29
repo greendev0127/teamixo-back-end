@@ -79,7 +79,7 @@ router.post("/addtrack", async (req, res) => {
     Item.id = uuid.v1();
     Item.createdAt = timeStamp;
     Item.updateAt = timeStamp;
-    Item.edit_state = true;
+    Item.edit_state = 2;
     delete Item.tableName;
     delete Item.siteId;
     delete Item.track_id;
@@ -155,6 +155,8 @@ router.post("/updatetrack", async (req, res) => {
         "#date": "date",
         "#start_date": "start_date",
         "#end_date": "end_date",
+        "#start_origin": "start_origin",
+        "#end_origin": "end_origin",
         "#total_time": "total_time",
       },
       ExpressionAttributeValues: {
@@ -163,12 +165,14 @@ router.post("/updatetrack", async (req, res) => {
         ":date": data.date,
         ":start_date": data.start_date,
         ":end_date": data.end_date,
+        ":start_origin": data.start_origin,
+        ":end_origin": data.end_origin,
         ":total_time": data.total_time,
-        ":edit_state": true,
+        ":edit_state": 1,
         ":updateAt": timeStamp,
       },
       UpdateExpression:
-        "SET #name = :name, #staff_id = :staff_id, #date = :date, #start_date = :start_date, #end_date = :end_date, #total_time = :total_time, edit_state = :edit_state, updateAt = :updateAt",
+        "SET #name = :name, #staff_id = :staff_id, #date = :date, #start_date = :start_date, #end_date = :end_date, #start_origin = :start_origin, #end_origin = :end_origin, #total_time = :total_time, edit_state = :edit_state, updateAt = :updateAt",
       ReturnValues: "ALL_NEW",
     };
 

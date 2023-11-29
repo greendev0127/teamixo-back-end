@@ -16,6 +16,7 @@ provider:
     CLIENT_ID: "4es6mafef0300r7je1fpa7ui1h"
     S3_BUCKET_NAME: ${self:custom.bucket}
     DEFAULT_AVATAR: "https://teamixo-app-development.s3.eu-west-2.amazonaws.com/Home/Avatars/default/user.png"
+    DEFAULT_COMAPNY_LOGO: "https://teamixo-app-development.s3.eu-west-2.amazonaws.com/Home/Logos/default/company.png"
 
 plugins:
   - serverless-webpack

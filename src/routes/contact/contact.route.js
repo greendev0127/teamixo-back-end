@@ -139,6 +139,18 @@ router.post("/updateticket", async (req, res) => {
   }
 });
 
+router.get("/fetchtickets", async (req, res) => {
+  try {
+    const params = {
+      TableName: "support",
+    };
+    const ticketData = await dynamoDb.scan(params).promise();
+    return res.status(200).json({ statusCode: 200, data: ticketData });
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
 router.post("/fetchticket", async (req, res) => {
   try {
     const data = req.body;

@@ -124,13 +124,16 @@ router.post("/location", async (req, res) => {
       ExpressionAttributeNames: {
         "#lat": "lat",
         "#lng": "lng",
+        "#address": "address",
       },
       ExpressionAttributeValues: {
         ":lat": data.lat,
         ":lng": data.lng,
+        ":address": data.address,
         ":updateAt": timeStamp,
       },
-      UpdateExpression: "SET #lat = :lat, #lng = :lng, updateAt = :updateAt",
+      UpdateExpression:
+        "SET #lat = :lat, #lng = :lng, #address = :address, updateAt = :updateAt",
       ReturnValues: "ALL_NEW",
     };
 

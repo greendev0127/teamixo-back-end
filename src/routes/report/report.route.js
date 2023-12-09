@@ -1,5 +1,6 @@
 import AWS from "aws-sdk";
 import { Router } from "express";
+import moment from "moment";
 const uuid = require("uuid");
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
@@ -61,77 +62,121 @@ router.post("/scandate", async (req, res) => {
   }
 });
 
+// router.post("/addtrack", async (req, res) => {
+//   try {
+//     const timeStamp = new Date().getTime();
+//     const data = req.body;
+//     if (!data) {
+//       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+//     }
+
+//     const TableName = data.tableName;
+//     let site_id = data.site_id;
+//     let last_start_date = data.last_start_date;
+//     let track_id = data.track_id;
+//     const clocked_state = data.state;
+
+//     let Item = data;
+//     Item.id = uuid.v1();
+//     Item.createdAt = timeStamp;
+//     Item.updateAt = timeStamp;
+//     Item.edit_state = 2;
+//     delete Item.tableName;
+//     delete Item.siteId;
+//     delete Item.track_id;
+//     delete Item.last_start_date;
+//     delete Item.state;
+//     delete Item.site_id;
+
+//     const params = {
+//       TableName: TableName,
+//       Item,
+//     };
+
+//     await dynamoDb.put(params).promise();
+
+//     var state = clocked_state;
+//     if (Item.end_date === null) {
+//       track_id = Item.id;
+//       last_start_date = data.start_date;
+//       state = true;
+//       site_id = TableName;
+//     }
+
+//     const staffParams = {
+//       TableName: "staff_list",
+//       Key: {
+//         id: data.staff_id,
+//       },
+//       ExpressionAttributeNames: {
+//         "#clocked_state": "clocked_state",
+//         "#track_id": "track_id",
+//         "#site_id": "site_id",
+//         "#last_start_date": "last_start_date",
+//       },
+//       ExpressionAttributeValues: {
+//         ":clocked_state": state,
+//         ":track_id": track_id,
+//         ":site_id": site_id,
+//         ":last_start_date": last_start_date,
+//         ":updateAt": timeStamp,
+//       },
+//       UpdateExpression:
+//         "SET #track_id = :track_id, #last_start_date = :last_start_date, #clocked_state = :clocked_state, #site_id = :site_id, updateAt = :updateAt",
+//       ReturnValues: "ALL_NEW",
+//     };
+
+//     await dynamoDb.update(staffParams).promise();
+
+//     return res.status(200).json({
+//       statusCode: 200,
+//       message: `${Item.name} track data has been successfully created`,
+//     });
+//   } catch (error) {
+//     return res.status(200).json(error);
+//   }
+// });
+
 router.post("/addtrack", async (req, res) => {
   try {
     const timeStamp = new Date().getTime();
     const data = req.body;
     if (!data) {
-      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+      return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
     }
 
-    const TableName = data.tableName;
-    let site_id = data.site_id;
-    let last_start_date = data.last_start_date;
-    let track_id = data.track_id;
-    const clocked_state = data.state;
+    const track_id = uuid.v1();
 
-    let Item = data;
-    Item.id = uuid.v1();
-    Item.createdAt = timeStamp;
-    Item.updateAt = timeStamp;
-    Item.edit_state = 2;
-    delete Item.tableName;
-    delete Item.siteId;
-    delete Item.track_id;
-    delete Item.last_start_date;
-    delete Item.state;
-    delete Item.site_id;
+    const promise = data.dateList.map(async (item, index) => {
+      const uid = uuid.v1();
 
-    const params = {
-      TableName: TableName,
-      Item,
-    };
+      const dateParams = {
+        TableName: data.tableName,
+        Item: {
+          id: uid,
+          track_id: track_id,
+          staff_id: data.staff.id,
+          date: moment(item.start_date).format("YYYY-MM-DD"),
+          start_date: item.start_date,
+          end_date: item.end_date,
+          total_time: item.total_time,
+          name: data.staff.name,
+          status: item.status,
+          createdAt: timeStamp,
+          updateAt: timeStamp,
+        },
+      };
+      await dynamoDb.put(dateParams).promise();
+    });
 
-    await dynamoDb.put(params).promise();
-
-    var state = clocked_state;
-    if (Item.end_date === null) {
-      track_id = Item.id;
-      last_start_date = data.start_date;
-      state = true;
-      site_id = TableName;
-    }
-
-    const staffParams = {
-      TableName: "staff_list",
-      Key: {
-        id: data.staff_id,
-      },
-      ExpressionAttributeNames: {
-        "#clocked_state": "clocked_state",
-        "#track_id": "track_id",
-        "#site_id": "site_id",
-        "#last_start_date": "last_start_date",
-      },
-      ExpressionAttributeValues: {
-        ":clocked_state": state,
-        ":track_id": track_id,
-        ":site_id": site_id,
-        ":last_start_date": last_start_date,
-        ":updateAt": timeStamp,
-      },
-      UpdateExpression:
-        "SET #track_id = :track_id, #last_start_date = :last_start_date, #clocked_state = :clocked_state, #site_id = :site_id, updateAt = :updateAt",
-      ReturnValues: "ALL_NEW",
-    };
-
-    await dynamoDb.update(staffParams).promise();
+    await Promise.all(promise);
 
     return res.status(200).json({
       statusCode: 200,
-      message: `${Item.name} track data has been successfully created`,
+      message: `${data.staff.name} track data has been successfully created`,
     });
   } catch (error) {
+    console.log(error);
     return res.status(200).json(error);
   }
 });

@@ -24,6 +24,7 @@ router.post("/create", async (req, res) => {
       address: data.address,
       postcode: data.postCode,
       telephone: data.telePhone,
+      email: data.email,
       country_state: data.state,
       timeZone: data.timeZone,
       logo: process.env.DEFAULT_COMAPNY_LOGO,
@@ -245,6 +246,189 @@ router.post("/getcompany", async (req, res) => {
     };
 
     return res.status(200).json(response);
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
+router.post("/updatelogo", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status({ statusCode: 400, message: "Bad Request" });
+    }
+
+    let location = "";
+
+    var buf = Buffer.from(
+      data.logo.replace(/^data:image\/\w+;base64,/, ""),
+      "base64"
+    );
+
+    const type = data.logo.split(";")[0].split("/")[1];
+    const imageParam = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: `Home/Logos/${data.organization_id}/${timeStamp}.${type}`,
+      Body: buf,
+      ACL: "public-read",
+      ContentEncoding: "base64",
+      ContentType: `image/${type}`,
+    };
+    try {
+      const uploadData = await s3bucket.upload(imageParam).promise();
+      location = uploadData.Location;
+    } catch (error) {
+      console.log(error);
+      return res.status(200).json({ statusCode: 500, error });
+    }
+
+    const updateParams = {
+      TableName: "company_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#logo": "logo",
+      },
+      ExpressionAttributeValues: {
+        ":logo": location,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression: "SET #logo = :logo, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await dynamoDb.update(updateParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Company Logo has been successfully updated",
+      location: location,
+      response: result,
+    });
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
+router.post("/updatename", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const updateParams = {
+      TableName: "company_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#name": "name",
+      },
+      ExpressionAttributeValues: {
+        ":name": data.name,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression: "SET #name = :name, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await dynamoDb.update(updateParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Company Name has been successfully updated",
+      response: result,
+    });
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
+router.post("/updatesettings", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const updateParams = {
+      TableName: "company_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#rdname": "rdname",
+        "#break": "break",
+        "#timeZone": "timeZone",
+        "#date_format": "date_format",
+        "#type": "type",
+        "#round": "round",
+      },
+      ExpressionAttributeValues: {
+        ":rdname": data.rdname,
+        ":break": data.break,
+        ":timeZone": data.timeZone,
+        ":date_format": data.date_format,
+        ":type": data.type,
+        ":round": data.round,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #rdname = :rdname, #break = :break, #timeZone = :timeZone, #date_format = :date_format, #type = :type, #round = :round, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await dynamoDb.update(updateParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Company Name has been successfully updated",
+      response: result,
+    });
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
+router.post("/updatecontact", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const updateParams = {
+      TableName: "company_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#email": "email",
+        "#telephone": "telephone",
+      },
+      ExpressionAttributeValues: {
+        ":email": data.email,
+        ":telephone": data.telephone,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #email = :email, #telephone = :telephone, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await dynamoDb.update(updateParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Company Name has been successfully updated",
+      response: result,
+    });
   } catch (error) {
     return res.status(200).json(error);
   }

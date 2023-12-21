@@ -27,7 +27,7 @@ router.post("/create", async (req, res) => {
 
     let Item = {
       id: uuid.v1(),
-      organization_id: data.organization_id,
+      organization_id: data.companyInfo.organization_id,
       email: data.email,
       name: data.name,
       avatar: process.env.DEFAULT_AVATAR,
@@ -71,7 +71,7 @@ router.post("/create", async (req, res) => {
         },
         {
           Name: "custom:organization_id",
-          Value: data.organization_id,
+          Value: data.companyInfo.organization_id,
         },
       ],
       MessageAction: "SUPPRESS", // suppresses the welcome message
@@ -101,7 +101,7 @@ router.post("/create", async (req, res) => {
             Data: `<div>
               <p>Dear ${data.name}</p>
               <p>
-                You have been invited to join the ${data.companyName} workspace, we use this
+                You have been invited to join the ${data.companyInfo.name} workspace, we use this
                 system for you to clock-in and clock-out of your shifts as well as to manage
                 your employee profile, it is important you setup your profile now using the
                 link below:
@@ -147,10 +147,10 @@ router.post("/create", async (req, res) => {
               </p>
               <p>
                 If you have any questions please reply to this e-mail, send an e-mail to
-                [Company Root Email] or contact your manager.
+                ${data.companyInfo.email} or contact your manager.
               </p>
               <p>Kind Regards,</p>
-              <p>The ${data.companyName} admin team.</p>
+              <p>The ${data.companyInfo.name} admin team.</p>
             </div>
             `,
           },
@@ -496,6 +496,129 @@ router.post("/delete", async (req, res) => {
     });
   } catch (error) {
     return res.status(200).json(error);
+  }
+});
+
+router.post("/addpermission", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const permissionParam = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#permission": "permission",
+      },
+      ExpressionAttributeValues: {
+        ":permission": data.permission,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression: "SET #permission = :permission, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(permissionParam).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Permissions has been successfully added!",
+    });
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
+router.post("/fetchadmin", async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const params = {
+      TableName: "staff_list",
+      FilterExpression:
+        "#organization_id = :organization_id AND #level = :level",
+      ExpressionAttributeNames: {
+        "#organization_id": "organization_id",
+        "#level": "level",
+      },
+      ExpressionAttributeValues: {
+        ":organization_id": data.organization_id,
+        ":level": 2,
+      },
+    };
+    const result = await dynamoDb.scan(params).promise();
+    const response = {
+      statusCode: 200,
+      body: result.Items,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
+router.post("/grade", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const updateParams = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#level": "level",
+        "#permission": "permission",
+        "#role": "role",
+      },
+      ExpressionAttributeValues: {
+        ":level": data.level,
+        ":permission": data.permission,
+        ":role": data.staff_role,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #level = :level, #permission = :permission, #role = :role, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+    await dynamoDb.update(updateParams).promise();
+
+    const cognitoParams = {
+      UserPoolId: process.env.USER_POOL_ID,
+      Username: data.email,
+      UserAttributes: [
+        {
+          Name: "custom:level",
+          Value: data.level.toString(),
+        },
+        {
+          Name: "custom:role",
+          Value: data.role,
+        },
+      ],
+    };
+
+    await cognito.adminUpdateUserAttributes(cognitoParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Staff has been successfully down graded",
+    });
+  } catch (error) {
+    res.status(200).json(error);
   }
 });
 

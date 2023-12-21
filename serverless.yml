@@ -12,11 +12,11 @@ provider:
   timeout: 90
   stage: development
   environment:
-    USER_POOL_ID: "eu-west-2_0JgGQUwWI"
-    CLIENT_ID: "4es6mafef0300r7je1fpa7ui1h"
+    USER_POOL_ID: ${env:USER_POOL_ID}
+    CLIENT_ID: ${env:CLIENT_ID}
     S3_BUCKET_NAME: ${self:custom.bucket}
-    DEFAULT_AVATAR: "https://teamixo-app-development.s3.eu-west-2.amazonaws.com/Home/Avatars/default/user.png"
-    DEFAULT_COMAPNY_LOGO: "https://teamixo-app-development.s3.eu-west-2.amazonaws.com/Home/Logos/default/company.png"
+    DEFAULT_AVATAR: ${env:DEFAULT_AVATAR}
+    DEFAULT_COMAPNY_LOGO: ${env:DEFAULT_COMAPNY_LOGO}
 
 plugins:
   - serverless-webpack

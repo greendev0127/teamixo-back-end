@@ -379,7 +379,7 @@ router.post("/upgrade", async (req, res) => {
 
     await dynamoDb.update(params).promise();
 
-    const inviteLink = "https://teamixo-server.vercel.app/invite/" + data.id;
+    const inviteLink = "https://teamixo-user.vercel.app/invite/" + data.id;
 
     var emailParams = {
       Destination: {
@@ -392,7 +392,7 @@ router.post("/upgrade", async (req, res) => {
             Data: `<div>
             <p>Dear ${data.name}</p>
             <p>
-              You have been invited to join the ${data.companyName} workspace, we use this
+              You have been invited to join the ${data.companyInfo.name} workspace, we use this
               system for you to clock-in and clock-out of your shifts as well as to manage
               your employee profile, it is important you setup your profile now using the
               link below:
@@ -438,10 +438,10 @@ router.post("/upgrade", async (req, res) => {
             </p>
             <p>
               If you have any questions please reply to this e-mail, send an e-mail to
-              [Company Root Email] or contact your manager.
+              ${data.companyInfo.email} or contact your manager.
             </p>
             <p>Kind Regards,</p>
-            <p>The ${data.companyName} admin team.</p>
+            <p>The ${data.companyInfo.name} admin team.</p>
           </div>
           `,
           },

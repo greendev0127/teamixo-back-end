@@ -434,4 +434,40 @@ router.post("/updatecontact", async (req, res) => {
   }
 });
 
+router.post("/updateForm", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const updateParams = {
+      TableName: "company_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#form": "form",
+      },
+      ExpressionAttributeValues: {
+        ":form": data.form,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression: "SET #form = :form, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await dynamoDb.update(updateParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Company Form has been successfully updated",
+      response: result,
+    });
+  } catch (error) {
+    return res.status(400).json(error);
+  }
+});
+
 export default router;

@@ -1,6 +1,6 @@
 import AWS from "aws-sdk";
 import { Router } from "express";
-import moment from "moment"
+import moment from "moment";
 const uuid = require("uuid");
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
@@ -87,7 +87,7 @@ router.post("/stafflist", async (req, res) => {
 
 router.post("/trigger", async (req, res) => {
   try {
-		const timeStamp = new Date().getTime();
+    const timeStamp = new Date().getTime();
     const data = req.body;
     if (!data) {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
@@ -136,7 +136,7 @@ router.post("/trigger", async (req, res) => {
 
 router.post("/start", async (req, res) => {
   try {
-		const timeStamp = new Date().getTime();
+    const timeStamp = new Date().getTime();
     const data = req.body;
     if (!data) {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });

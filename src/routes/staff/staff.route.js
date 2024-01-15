@@ -622,4 +622,39 @@ router.post("/grade", async (req, res) => {
   }
 });
 
+router.post("/block", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const updateParams = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#block_state": "block_state",
+      },
+      ExpressionAttributeValues: {
+        ":block_state": data.block_state,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression: "SET #block_state = :block_state, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(updateParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Staff block state has been successfully changed",
+    });
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
 export default router;

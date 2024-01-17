@@ -45,6 +45,48 @@ router.post("/newform", async (req, res) => {
   }
 });
 
+router.post("/updateform", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
+    }
+
+    const updateParam = {
+      TableName: "form_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#form_name": "form_name",
+        "#submit_label": "submit_label",
+        "#form_elements": "form_elements",
+        "#color": "color",
+      },
+      ExpressionAttributeValues: {
+        ":form_name": data.form_name,
+        ":submit_label": data.submit_label,
+        ":form_elements": data.form_elements,
+        ":color": data.color,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #form_name = :form_name, #submit_label = :submit_label, #form_elements = :form_elements, #color = :color, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(updateParam).promise();
+
+    return res
+      .status(200)
+      .json({ statusCode: 200, message: "Allocate Form Success" });
+  } catch (error) {
+    console.log("error", error);
+    return res.status(200).json(error);
+  }
+});
+
 router.post("/fetch", async (req, res) => {
   try {
     const data = req.body;

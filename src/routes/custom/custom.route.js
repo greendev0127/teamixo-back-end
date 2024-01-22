@@ -46,3 +46,5 @@ router.post("/adddata", async (req, res) => {
     return res.status(200).json(error);
   }
 });
+
+export default router;

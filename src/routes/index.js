@@ -17,6 +17,7 @@ import client from "./client";
 import admin from "./admin";
 import log from "./logs";
 import form from "./form";
+import custom from "./custom";
 
 const router = Router();
 
@@ -37,5 +38,6 @@ router.use("/client", client);
 router.use("/admin", admin);
 router.use("/logs", log);
 router.use("/form", form);
+router.use("/custom", custom);
 
 export default router;

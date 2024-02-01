@@ -22,6 +22,7 @@ router.post("/create", async (req, res) => {
       city: data.city,
       country: data.country,
       address: data.address,
+      address_sec: data.address_sec,
       postcode: data.postCode,
       telephone: data.telePhone,
       email: data.email,

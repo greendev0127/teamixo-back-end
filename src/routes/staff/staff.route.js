@@ -657,7 +657,7 @@ router.post("/block", async (req, res) => {
   }
 });
 
-router.post("emailduplicate", async (req, res) => {
+router.post("/emailduplicate", async (req, res) => {
   try {
     const data = req.body;
     if (!data) {

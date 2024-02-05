@@ -657,4 +657,27 @@ router.post("/block", async (req, res) => {
   }
 });
 
+router.post("emailduplicate", async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    var params = {
+      TableName: "staff_list",
+      FilterExpression: "#email = :email",
+      ExpressionAttributeNames: { "#email": "email" }, // field to check
+      ExpressionAttributeValues: { ":email": data.email },
+    };
+
+    const result = await dynamoDb.scan(params).promise();
+
+    return res.status(200).json({ statusCode: 200, data: result.Items });
+  } catch (error) {
+    console.log(error);
+    return res.status(200).json(error);
+  }
+});
+
 export default router;

@@ -252,22 +252,10 @@ router.post("/changeEmail", async (req, res) => {
           Name: "email",
           Value: data.newEmail, // replace with the new email
         },
-        {
-          Name: "email_verified",
-          Value: "false",
-        },
       ],
     };
 
     const response = await cognito.adminUpdateUserAttributes(params).promise();
-
-    const verificationParam = {
-      UserPoolId: USER_POOL_ID,
-      Username: data.oldEmail,
-      AttributeName: "email",
-    };
-
-    await cognito.getUserAttributeVerificationCode(verificationParam).promise();
 
     const staffParams = {
       TableName: "staff_list",

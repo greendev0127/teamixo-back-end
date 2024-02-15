@@ -339,7 +339,7 @@ router.post("/emailverify", async (req, res) => {
       Code: data.confirmCode, // The verification code submitted by the user
     };
 
-    await cognitoIdentityServiceProvider.verifyUserAttribute(params).promise();
+    await cognito.verifyUserAttribute(params).promise();
     console.log("Email verified successfully");
 
     return res.status(200).json({

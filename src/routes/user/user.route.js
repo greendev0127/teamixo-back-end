@@ -285,4 +285,36 @@ router.post("/changeEmail", async (req, res) => {
   }
 });
 
+router.post("/resend", async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const { CLIENT_ID } = process.env;
+
+    const params = {
+      ClientId: CLIENT_ID,
+      Username: data.email,
+    };
+
+    await cognito.resendConfirmationCode(params).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Verification code resent successfully.",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(200).json({
+      statusCode: 500,
+      body: JSON.stringify({
+        message: "Failed to resend verification code",
+        error: error.message,
+      }),
+    });
+  }
+});
+
 export default router;

@@ -154,7 +154,7 @@ router.post("/confirmEmail", async (req, res) => {
       statusCode: 400,
       data: {
         message: "Verification code is not correct",
-        error: error.message,
+        error: error,
       },
     });
   }
@@ -252,12 +252,16 @@ router.post("/changeEmail", async (req, res) => {
     const { USER_POOL_ID } = process.env;
 
     const params = {
-      UserPoolId: USER_POOL_ID, // replace with your User Pool ID
-      Username: data.oldEmail, // replace with the old email
+      UserPoolId: USER_POOL_ID,
+      Username: data.oldEmail,
       UserAttributes: [
         {
           Name: "email",
-          Value: data.newEmail, // replace with the new email
+          Value: data.newEmail,
+        },
+        {
+          Name: "email_verified",
+          Value: "false",
         },
       ],
     };
@@ -316,6 +320,40 @@ router.post("/resend", async (req, res) => {
       statusCode: 500,
       body: {
         message: "Failed to resend verification code",
+        error: error,
+      },
+    });
+  }
+});
+
+router.post("/emailverify", async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const params = {
+      AccessToken: data.accessToken, // The user's access token
+      AttributeName: "email", // Attribute you are verifying
+      Code: data.confirmCode, // The verification code submitted by the user
+    };
+
+    await cognitoIdentityServiceProvider.verifyUserAttribute(params).promise();
+    console.log("Email verified successfully");
+
+    return res.status(200).json({
+      statusCode: 200,
+      body: {
+        message: "Email verified successfully",
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(200).json({
+      statusCode: 500,
+      body: {
+        message: "Email verification code is not correct.",
         error: error,
       },
     });

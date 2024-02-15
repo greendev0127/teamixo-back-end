@@ -121,6 +121,7 @@ router.post("/login", async (req, res) => {
       statusCode: 200,
       message: "Login succeed",
       token: response.AuthenticationResult.IdToken,
+      accessToken: response.AuthenticationResult.AccessToken,
     });
   } catch (error) {
     console.error("An error ocurred:", error);
@@ -149,7 +150,13 @@ router.post("/confirmEmail", async (req, res) => {
     });
   } catch (error) {
     console.error("An error occured:", error);
-    res.status(200).json(error);
+    res.status(200).json({
+      statusCode: 400,
+      data: {
+        message: "Verification code is not correct",
+        error: error.message,
+      },
+    });
   }
 });
 
@@ -309,10 +316,10 @@ router.post("/resend", async (req, res) => {
     console.log(error);
     return res.status(200).json({
       statusCode: 500,
-      body: JSON.stringify({
+      body: {
         message: "Failed to resend verification code",
-        error: error.message,
-      }),
+        error: error,
+      },
     });
   }
 });

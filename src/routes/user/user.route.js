@@ -299,14 +299,12 @@ router.post("/resend", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }
 
-    const { CLIENT_ID } = process.env;
-
     const params = {
-      ClientId: CLIENT_ID,
-      Username: data.email,
+      AccessToken: data.accessToken,
+      AttributeName: "email",
     };
 
-    await cognito.resendConfirmationCode(params).promise();
+    await cognito.getUserAttributeVerificationCode(params).promise();
 
     return res.status(200).json({
       statusCode: 200,

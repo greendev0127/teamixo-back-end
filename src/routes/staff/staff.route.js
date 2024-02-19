@@ -680,4 +680,73 @@ router.post("/emailduplicate", async (req, res) => {
   }
 });
 
+router.post("/start", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
+    }
+
+    const uid = uuid.v1();
+
+    const dateParams = {
+      TableName: data.tableName,
+      Item: {
+        id: uid,
+        track_id: uid,
+        staff_id: data.staff.id,
+        date: moment(data.date).format("YYYY-MM-DD"),
+        start_date: roundToNearestFiveMinutes(data.date, data.round),
+        end_date: null,
+        total_time: null,
+        name: data.staff.name,
+        status: "start",
+        createdAt: timeStamp,
+        updateAt: timeStamp,
+      },
+    };
+
+    await dynamoDb.put(dateParams).promise();
+
+    const params = {
+      TableName: "staff_list",
+      Key: {
+        id: data.staff.id,
+      },
+      ExpressionAttributeNames: {
+        "#clocked_state": "clocked_state",
+        "#break_state": "break_state",
+        "#track_id": "track_id",
+        "#record_id": "record_id",
+        "#site_id": "site_id",
+        "#last_start_date": "last_start_date",
+      },
+      ExpressionAttributeValues: {
+        ":clocked_state": true,
+        ":break_state": false,
+        ":track_id": uid,
+        ":record_id": uid,
+        ":site_id": data.tableName,
+        ":last_start_date": roundToNearestFiveMinutes(data.date, data.round),
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #clocked_state = :clocked_state, #break_state = :break_state, #track_id = :track_id, #record_id = :record_id, #site_id = :site_id, #last_start_date = :last_start_date, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await dynamoDb.update(params).promise();
+
+    const response = {
+      stsatusCode: 200,
+      body: result.Attributes,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
 export default router;

@@ -352,6 +352,7 @@ router.post("/emailverify", async (req, res) => {
     console.log(error);
     return res.status(200).json({
       statusCode: 500,
+      error: error,
       body: {
         message: "Email verification code is not correct.",
         error: error,

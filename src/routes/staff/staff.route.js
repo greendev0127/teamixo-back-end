@@ -749,4 +749,98 @@ router.post("/start", async (req, res) => {
   }
 });
 
+router.post("/end", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
+    }
+    //calculate the total time from start work to start break
+    var differenceInMs =
+      roundToNearestFiveMinutes(data.date, data.round) -
+      data.staff.last_start_date;
+
+    var total_time = differenceInMs;
+
+    const uid = uuid.v1();
+    // update the start state record with total time and end time
+    const updateParams = {
+      TableName: data.tableName,
+      Key: {
+        id: data.staff.record_id,
+      },
+      ExpressionAttributeNames: {
+        "#end_date": "end_date",
+        "#total_time": "total_time",
+      },
+      ExpressionAttributeValues: {
+        ":end_date": roundToNearestFiveMinutes(data.date, data.round),
+        ":total_time": total_time,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #end_date = :end_date, #total_time = :total_time, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(updateParams).promise();
+
+    // add new record to report table with break state
+    const addParams = {
+      TableName: data.tableName,
+      Item: {
+        id: uid,
+        track_id: data.staff.track_id,
+        staff_id: data.staff.id,
+        date: moment(data.date).format("YYYY-MM-DD"),
+        start_date: roundToNearestFiveMinutes(data.date, data.round),
+        total_time: 0,
+        name: data.staff.name,
+        status: "end",
+        createdAt: timeStamp,
+        updateAt: timeStamp,
+      },
+    };
+
+    await dynamoDb.put(addParams).promise();
+
+    const updateUserParam = {
+      TableName: "staff_list",
+      Key: {
+        id: data.staff.id,
+      },
+      ExpressionAttributeNames: {
+        "#clocked_state": "clocked_state",
+        "#break_state": "break_state",
+        "#record_id": "record_id",
+        "#site_id": "site_id",
+        "#last_start_date": "last_start_date",
+      },
+      ExpressionAttributeValues: {
+        ":clocked_state": false,
+        ":break_state": false,
+        ":record_id": null,
+        ":site_id": null,
+        ":last_start_date": null,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #clocked_state = :clocked_state, #break_state = :break_state, #record_id = :record_id, #site_id = :site_id, #last_start_date = :last_start_date, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await dynamoDb.update(updateUserParam).promise();
+    const response = {
+      stsatusCode: 200,
+      body: result.Attributes,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.log(error);
+    return res.status(200).json(error);
+  }
+});
+
 export default router;

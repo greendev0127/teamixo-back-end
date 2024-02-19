@@ -1,5 +1,6 @@
 import AWS from "aws-sdk";
 import { Router } from "express";
+import moment from "moment";
 const uuid = require("uuid");
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
@@ -8,6 +9,12 @@ const s3bucket = new AWS.S3();
 var ses = new AWS.SES();
 
 const router = Router();
+
+function roundToNearestFiveMinutes(date, round) {
+  const ms = 1000 * 60 * round; // convert 5 minutes to milliseconds
+  const roundedDate = new Date(Math.round(date / ms) * ms);
+  return roundedDate.getTime();
+}
 
 router.post("/create", async (req, res) => {
   try {
@@ -707,7 +714,7 @@ router.post("/start", async (req, res) => {
       },
     };
 
-    await dynamoDb.put(dateParams).promise();
+    const resu = await dynamoDb.put(dateParams).promise();
 
     const params = {
       TableName: "staff_list",
@@ -736,7 +743,7 @@ router.post("/start", async (req, res) => {
       ReturnValues: "ALL_NEW",
     };
 
-    const result = await dynamoDb.update(params).promise();
+    await dynamoDb.update(params).promise();
 
     const response = {
       stsatusCode: 200,
@@ -745,6 +752,7 @@ router.post("/start", async (req, res) => {
 
     return res.status(200).json(response);
   } catch (error) {
+    console.log(error);
     return res.status(200).json(error);
   }
 });

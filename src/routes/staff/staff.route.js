@@ -740,7 +740,7 @@ router.post("/start", async (req, res) => {
 
     const response = {
       stsatusCode: 200,
-      body: result.Attributes,
+      message: "The staff has been clocked in successfully.",
     };
 
     return res.status(200).json(response);
@@ -833,7 +833,7 @@ router.post("/end", async (req, res) => {
     const result = await dynamoDb.update(updateUserParam).promise();
     const response = {
       stsatusCode: 200,
-      body: result.Attributes,
+      message: "The staff has been clocked out successfully.",
     };
 
     return res.status(200).json(response);

@@ -851,4 +851,41 @@ router.post("/end", async (req, res) => {
   }
 });
 
+router.post("/setclock", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const updateParams = {
+      TableName: "staff_list",
+      Key: {
+        id: data.staff.id,
+      },
+      ExpressionAttributeNames: {
+        "#clockInTime": "clockInTime",
+        "#clockOutTime": "clockOutTime",
+      },
+      ExpressionAttributeValues: {
+        ":clockInTime": data.clockInTime,
+        ":clockOutTime": data.clockOutTime,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #clockInTime = :clockInTime, #clockOutTime = :clockOutTime, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(updateParams).promise();
+
+    return res
+      .status(200)
+      .json({ statusCode: 200, message: "Staff clock time is setted!" });
+  } catch (error) {
+    return res.status(200).json({ statusCode: 500, error: error });
+  }
+});
+
 export default router;

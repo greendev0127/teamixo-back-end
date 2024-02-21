@@ -862,7 +862,7 @@ router.post("/setclock", async (req, res) => {
     const updateParams = {
       TableName: "staff_list",
       Key: {
-        id: data.staff.id,
+        id: data.id,
       },
       ExpressionAttributeNames: {
         "#clockInTime": "clockInTime",

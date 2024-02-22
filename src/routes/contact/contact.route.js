@@ -3,6 +3,7 @@ import { Router } from "express";
 const uuid = require("uuid");
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
+var ses = new AWS.SES();
 
 const router = Router();
 
@@ -178,6 +179,48 @@ router.post("/fetchticket", async (req, res) => {
     return res.status(200).json(response);
   } catch (error) {
     return res.status(200).json(error);
+  }
+});
+
+router.post("/sendemail", async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    var emailParams = {
+      Destination: {
+        ToAddresses: ["talent.dev0127@gmail.com"], // replace recipient@example.com with the recipient's email address
+      },
+      Message: {
+        Body: {
+          Html: {
+            Charset: "UTF-8",
+            Data: `<div>
+              <p>Dear ${data.name}</p>
+              <p>Dear ${data.email}</p>
+              <p>Dear ${data.content}</p>
+            </div>
+            `,
+          },
+        },
+        Subject: {
+          Charset: "UTF-8",
+          Data: `Support request`, // replace with your email subject
+        },
+      },
+      Source: "Teamixo Support <contact@teamixo.com>", // replace sender@example.com with your "From" address
+    };
+
+    await ses.sendEmail(emailParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Contact email is sent to support team",
+    });
+  } catch (error) {
+    return res.status(200).json({ statusCode: 500, error: error });
   }
 });
 

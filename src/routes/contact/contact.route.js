@@ -198,9 +198,9 @@ router.post("/sendemail", async (req, res) => {
           Html: {
             Charset: "UTF-8",
             Data: `<div>
-              <p>Dear ${data.name}</p>
-              <p>Dear ${data.email}</p>
-              <p>Dear ${data.content}</p>
+              <p>Name: ${data.name}</p>
+              <p>Email Address: ${data.email}</p>
+              <p>Content: ${data.content}</p>
             </div>
             `,
           },

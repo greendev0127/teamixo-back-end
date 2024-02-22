@@ -173,4 +173,40 @@ router.post("/delete", async (req, res) => {
   }
 });
 
+router.post("/settime", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const updateParams = {
+      TableName: "site_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#siteClockInTime": "siteClockInTime",
+      },
+      ExpressionAttributeValues: {
+        ":siteClockInTime": data.siteClockInTime,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #siteClockInTime = :siteClockInTime, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(updateParams).promise();
+
+    return res
+      .status(200)
+      .json({ statusCode: 200, message: "Site clock in time is setted." });
+  } catch (error) {
+    return res.status(200).json({ statusCode: 500, error: error });
+  }
+});
+
 export default router;

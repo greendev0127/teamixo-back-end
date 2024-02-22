@@ -191,7 +191,7 @@ router.post("/sendemail", async (req, res) => {
 
     var emailParams = {
       Destination: {
-        ToAddresses: ["talent.dev0127@gmail.com"], // replace recipient@example.com with the recipient's email address
+        ToAddresses: ["support@teamixo.com"], // replace recipient@example.com with the recipient's email address
       },
       Message: {
         Body: {

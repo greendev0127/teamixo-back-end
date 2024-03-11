@@ -15,7 +15,7 @@ router.post("/create", async (req, res) => {
     }
 
     let Item = {
-      id: uuid.v1(),
+      id: timeStamp,
       organization_id: data.organization_id,
       role: data.roleName,
       createAt: timeStamp,

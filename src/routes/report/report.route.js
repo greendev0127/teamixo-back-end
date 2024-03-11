@@ -162,10 +162,10 @@ router.post("/addtrack", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
     }
 
-    const track_id = uuid.v1();
+    const track_id = timeStamp;
 
     const promise = data.dateList.map(async (item, index) => {
-      const uid = uuid.v1();
+      const uid = timeStamp + index + 1;
 
       const dateParams = {
         TableName: data.tableName,
@@ -518,7 +518,7 @@ router.post("/autoclockin", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
     }
 
-    const uid = uuid.v1();
+    const uid = timeStamp;
 
     const dateParams = {
       TableName: data.tableName,

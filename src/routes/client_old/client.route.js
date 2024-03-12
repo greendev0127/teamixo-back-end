@@ -142,7 +142,7 @@ router.post("/start", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
     }
 
-    const uid = uuid.v1();
+    const uid = timeStamp;
 
     const dateParams = {
       TableName: data.tableName,
@@ -291,8 +291,8 @@ router.post("/addstaff", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
     }
 
-    const uid = uuid.v1();
-    const staff_id = uuid.v1();
+    const uid = timeStamp;
+    const staff_id = timeStamp;
 
     const dateParams = {
       TableName: data.tableName,

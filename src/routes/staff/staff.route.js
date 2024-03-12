@@ -33,7 +33,7 @@ router.post("/create", async (req, res) => {
     }
 
     let Item = {
-      id: uuid.v1(),
+      id: timeStamp,
       organization_id: data.companyInfo.organization_id,
       email: data.email,
       name: data.name,
@@ -695,7 +695,7 @@ router.post("/start", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
     }
 
-    const uid = uuid.v1();
+    const uid = timeStamp;
 
     const dateParams = {
       TableName: data.tableName,
@@ -771,7 +771,7 @@ router.post("/end", async (req, res) => {
 
     var total_time = differenceInMs;
 
-    const uid = uuid.v1();
+    const uid = timeStamp;
     // update the start state record with total time and end time
     const updateParams = {
       TableName: data.tableName,

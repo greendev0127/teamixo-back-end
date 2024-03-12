@@ -18,7 +18,7 @@ router.post("/addticket", async (req, res) => {
     const TableName = "support";
 
     let Item = data;
-    Item.id = timeStamp;
+    Item.id = timeStamp.toString();
     Item.createAt = timeStamp;
     Item.updateAt = timeStamp;
 

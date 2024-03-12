@@ -142,7 +142,7 @@ router.post("/start", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
     }
 
-    const uid = timeStamp
+    const uid = timeStamp.toString();
 
     const dateParams = {
       TableName: data.tableName,
@@ -218,7 +218,7 @@ router.post("/break", async (req, res) => {
 
     var total_time = differenceInMs;
 
-    const uid = timeStamp
+    const uid = timeStamp.toString();
     // update the start state record with total time and end time
     const updateParams = {
       TableName: data.tableName,
@@ -311,7 +311,7 @@ router.post("/restart", async (req, res) => {
 
     var total_time = differenceInMs;
 
-    const uid = timeStamp
+    const uid = timeStamp.toString();
     // update the start state record with total time and end time
     const updateParams = {
       TableName: data.tableName,
@@ -402,7 +402,7 @@ router.post("/end", async (req, res) => {
 
     var total_time = differenceInMs;
 
-    const uid = timeStamp
+    const uid = timeStamp.toString();
     // update the start state record with total time and end time
     const updateParams = {
       TableName: data.tableName,
@@ -517,8 +517,8 @@ router.post("/addstaff", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
     }
 
-    const uid = timeStamp
-    const staff_id = timeStamp
+    const uid = timeStamp.toString();
+    const staff_id = timeStamp.toString();
 
     const dateParams = {
       TableName: data.tableName,

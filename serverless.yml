@@ -16,7 +16,7 @@ provider:
     CLIENT_ID: ${env:CLIENT_ID}
     S3_BUCKET_NAME: ${self:custom.bucket}
     DEFAULT_AVATAR: ${env:DEFAULT_AVATAR}
-    DEFAULT_COMAPNY_LOGO: ${env:DEFAULT_COMAPNY_LOGO}
+    DEFAULT_COMPANY_LOGO: ${env:DEFAULT_COMPANY_LOGO}
 
 plugins:
   - serverless-webpack

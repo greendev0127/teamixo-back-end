@@ -19,7 +19,7 @@ router.post("/adddata", async (req, res) => {
     }
 
     let Item = {
-      id: timeStamp,
+      id: timeStamp.toString(),
       organization_id: data.organization_id,
       form_name: data.form_name,
       form_id: data.form_id,

@@ -170,7 +170,7 @@ router.post("/addtrack", async (req, res) => {
       const dateParams = {
         TableName: data.tableName,
         Item: {
-          id: uid,
+          id: uid.toString(),
           track_id: track_id,
           staff_id: data.staff.id,
           date: moment(item.start_date).format("YYYY-MM-DD"),
@@ -518,7 +518,7 @@ router.post("/autoclockin", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
     }
 
-    const uid = timeStamp;
+    const uid = timeStamp.toString();
 
     const dateParams = {
       TableName: data.tableName,

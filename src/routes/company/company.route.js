@@ -15,39 +15,47 @@ router.post("/create", async (req, res) => {
       return res.status({ statusCode: 400, message: "Bad Request" });
     }
 
-    let Item = {
-      id: timeStamp,
-      organization_id: data.organizationId,
-      name: data.name,
-      city: data.city,
-      country: data.country,
-      address: data.address,
-      address_sec: data.address_sec,
-      postcode: data.postCode,
-      telephone: data.telePhone,
-      email: data.email,
-      country_state: data.state,
-      timeZone: data.timeZone,
-      logo: process.env.DEFAULT_COMAPNY_LOGO,
-      date_format: "YYYY-MM-DD",
-      type: 1,
-      round: 5,
-      createAt: timeStamp,
-      updateAt: timeStamp,
-    };
+    console.log(data);
 
-    const params = {
+    const updateParams = {
       TableName: "company_list",
-      Item,
+      Key: { id: data.organizationId }, // Assuming 'id' is the primary key
+      UpdateExpression:
+        "set #name = :name, organization_id = :orgId, city = :city, country = :country, address = :address, address_sec = :addressSec, postcode = :postcode, telephone = :telephone, email = :email, country_state = :state, #timeZone = :timeZone, logo = :logo, date_format = :dateFormat, #type = :type, round = :round, updateAt = :updateAt",
+      ExpressionAttributeNames: {
+        "#name": "name", // Placeholder for reserved keyword
+        "#timeZone": "timeZone",
+        "#type": "type",
+      },
+      ExpressionAttributeValues: {
+        ":orgId": data.organizationId,
+        ":name": data.name,
+        ":city": data.city,
+        ":country": data.country,
+        ":address": data.address,
+        ":addressSec": data.address_sec,
+        ":postcode": data.postCode,
+        ":telephone": data.telePhone,
+        ":email": data.email,
+        ":state": data.state,
+        ":timeZone": data.timeZone,
+        ":logo": process.env.DEFAULT_COMPANY_LOGO, // Typo in original code: COMAPNY -> COMPANY
+        ":dateFormat": "YYYY-MM-DD",
+        ":type": 1,
+        ":round": 5,
+        ":updateAt": timeStamp,
+      },
+      ReturnValues: "UPDATED_NEW",
     };
 
-    await dynamoDb.put(params).promise();
+    const response = await dynamoDb.update(updateParams).promise();
 
     return res.status(200).json({
       statusCode: 200,
       message: "success create",
     });
   } catch (error) {
+    console.log(error);
     return res.status(200).json(error);
   }
 });

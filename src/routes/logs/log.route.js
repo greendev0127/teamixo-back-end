@@ -26,7 +26,7 @@ router.post("/addlog", async (req, res) => {
     const TableName = "logs";
 
     let Item = data;
-    Item.id = timeStamp;
+    Item.id = timeStamp.toString();
     Item.user = user.Item.name;
     Item.date = timeStamp;
     Item.createAt = timeStamp;

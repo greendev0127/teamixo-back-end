@@ -33,7 +33,7 @@ router.post("/create", async (req, res) => {
     }
 
     let Item = {
-      id: timeStamp,
+      id: timeStamp.toString(),
       organization_id: data.companyInfo.organization_id,
       email: data.email,
       name: data.name,
@@ -94,8 +94,8 @@ router.post("/create", async (req, res) => {
 
     const inviteLink =
       data.level === 2
-        ? "https://teamixo-server.vercel.app/invite/" + Item.id
-        : "https://teamixo-user.vercel.app/invite/" + Item.id;
+        ? "https://app.teamixo.com/invite/" + Item.id
+        : "https://teamixo-user-mvp.vercel.app/invite/" + Item.id;
 
     var emailParams = {
       Destination: {
@@ -695,7 +695,7 @@ router.post("/start", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
     }
 
-    const uid = timeStamp;
+    const uid = timeStamp.toString();
 
     const dateParams = {
       TableName: data.tableName,
@@ -771,7 +771,7 @@ router.post("/end", async (req, res) => {
 
     var total_time = differenceInMs;
 
-    const uid = timeStamp;
+    const uid = timeStamp.toString();
     // update the start state record with total time and end time
     const updateParams = {
       TableName: data.tableName,

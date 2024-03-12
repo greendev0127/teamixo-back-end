@@ -17,7 +17,7 @@ router.post("/signup", async (req, res) => {
     }
     const { CLIENT_ID } = process.env;
 
-    const userId = timeStamp;
+    const userId = timeStamp.toString();
 
     const params = {
       ClientId: CLIENT_ID,
@@ -40,12 +40,16 @@ router.post("/signup", async (req, res) => {
           Name: "custom:level",
           Value: "1",
         },
+        {
+          Name: "custom:organization_id",
+          Value: timeStamp.toString(),
+        },
       ],
     };
-    const response = await cognito.signUp(params).promise();
+    await cognito.signUp(params).promise();
 
     const Item = {
-      id: response.UserSub,
+      id: timeStamp.toString(),
       email: data.email,
       state: "free",
       createAt: timeStamp,
@@ -53,11 +57,11 @@ router.post("/signup", async (req, res) => {
     };
 
     const organizationParam = {
-      TableName: "organization",
+      TableName: "company_list",
       Item,
     };
 
-    await dynamoDb.put(organizationParam).promise();
+    const response = await dynamoDb.put(organizationParam).promise();
 
     const pin = Math.floor(1000 + Math.random() * 9000);
 
@@ -92,7 +96,7 @@ router.post("/signup", async (req, res) => {
     res.status(200).json({
       statusCode: 200,
       message: "User registration successful",
-      response: response,
+      response: Item,
     });
   } catch (error) {
     console.error("An error ocurred:", error);

@@ -18,6 +18,7 @@ import admin from "./admin";
 import log from "./logs";
 import form from "./form";
 import custom from "./custom";
+import payment from "./payment";
 
 const router = Router();
 
@@ -39,5 +40,6 @@ router.use("/admin", admin);
 router.use("/logs", log);
 router.use("/form", form);
 router.use("/custom", custom);
+router.use("/payment", payment);
 
 export default router;

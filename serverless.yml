@@ -14,7 +14,7 @@ provider:
   environment:
     USER_POOL_ID: ${env:USER_POOL_ID}
     CLIENT_ID: ${env:CLIENT_ID}
-    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY}
+    STRIPE_S_ID: ${env:STRIPE_S_ID}
     STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET}
     STRIPE_PRICE_ID: ${env:STRIPE_PRICE_ID}
     S3_BUCKET_NAME: ${self:custom.bucket}

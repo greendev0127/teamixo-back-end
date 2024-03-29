@@ -188,6 +188,7 @@ router.post("/forgot", async (req, res) => {
 router.post("/setpassword", async (req, res) => {
   try {
     const data = req.body;
+    const timeStamp = new Date().getTime();
     if (!data) {
       return res.status(200).json({
         statusCode: 400,
@@ -203,6 +204,25 @@ router.post("/setpassword", async (req, res) => {
     };
 
     const response = await cognito.adminSetUserPassword(verifyParams).promise();
+
+    const passwordStateParam = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#password_state": "password_state",
+      },
+      ExpressionAttributeValues: {
+        ":password_state": true,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #password_state = :password_state, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(passwordStateParam).promise();
 
     return res.status(200).json({ statusCode: 200, response });
   } catch (error) {

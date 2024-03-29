@@ -23,6 +23,24 @@ router.post("/create", async (req, res) => {
     if (!data) {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }
+
+    const companyStateCheckParam = {
+      TableName: "company_list",
+      Key: {
+        id: data.companyInfo.organization_id,
+      },
+    };
+
+    const companyData = await dynamoDb.get(companyStateCheckParam).promise();
+    console.log(companyData);
+    if (companyData.Item.state === "free" && data.staffAmount === 3) {
+      return res.status(200).json({
+        statusCode: 400,
+        type: "free",
+        message: "You have to upgrade your plan to add staffs further.",
+      });
+    }
+
     const pin = Math.floor(1000 + Math.random() * 9000);
     var result = "";
     var characters =
@@ -95,7 +113,7 @@ router.post("/create", async (req, res) => {
     const inviteLink =
       data.level === 2
         ? "https://app.teamixo.com/invite/" + Item.id
-        : "https://teamixo-user-mvp.vercel.app/invite/" + Item.id;
+        : "https://user.teamixo.com/invite/" + Item.id;
 
     var emailParams = {
       Destination: {
@@ -164,7 +182,7 @@ router.post("/create", async (req, res) => {
         },
         Subject: {
           Charset: "UTF-8",
-          Data: `You are invited as member from ${data.companyName}`, // replace with your email subject
+          Data: `You are invited as member from ${data.companyInfo.name}`, // replace with your email subject
         },
       },
       Source: "Teamixo Support <support@teamixo.com>", // replace sender@example.com with your "From" address
@@ -386,7 +404,7 @@ router.post("/upgrade", async (req, res) => {
 
     await dynamoDb.update(params).promise();
 
-    const inviteLink = "https://teamixo-user.vercel.app/invite/" + data.id;
+    const inviteLink = "https://user.teamixo.com/invite/" + data.id;
 
     var emailParams = {
       Destination: {
@@ -455,7 +473,7 @@ router.post("/upgrade", async (req, res) => {
         },
         Subject: {
           Charset: "UTF-8",
-          Data: "You are invited as member from Teamixo", // replace with your email subject
+          Data: `You are invited as member from ${data.companyInfo.name}`, // replace with your email subject
         },
       },
       Source: "support@teamixo.com", // replace sender@example.com with your "From" address

@@ -479,4 +479,65 @@ router.post("/updateForm", async (req, res) => {
   }
 });
 
+router.post("/checkPaidState", async (req, res) => {
+  try {
+    const data = req.body;
+
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const checkParam = {
+      TableName: "company_list",
+      Key: {
+        id: data.org_id,
+      },
+    };
+    const response = await dynamoDb.get(checkParam).promise();
+    return res.status(200).json({ statusCode: 200, data: response });
+  } catch (error) {
+    console.log("error", error);
+    return res.status(200).json({ statusCode: 400, error: error });
+  }
+});
+
+router.post("/checkStaffsNumber", async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+    console.log(data);
+    const tableName = "staff_list"; // Replace with your table name
+
+    const params = {
+      TableName: tableName,
+      FilterExpression: "organization_id = :organization_id",
+      ExpressionAttributeValues: {
+        ":organization_id": data.orgId,
+      },
+    };
+
+    const items = await dynamoDb.scan(params).promise();
+
+    const checkParam = {
+      TableName: "company_list",
+      Key: {
+        id: data.orgId,
+      },
+    };
+    const response = await dynamoDb.get(checkParam).promise();
+
+    console.log(response);
+    const result = {
+      totalNumber: items.Items.length,
+      limitNumber: response.Item.paymentInfo.quantity,
+    };
+    return res.status(200).json({ statusCode: 200, data: result });
+  } catch (error) {
+    console.log(error);
+    return res.status(200).json({ statusCode: 400, error: error });
+  }
+});
+
 export default router;

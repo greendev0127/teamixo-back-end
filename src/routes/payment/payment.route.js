@@ -1,14 +1,19 @@
 import AWS from "aws-sdk";
 import { Router } from "express";
 
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
+
 const stripe = require("stripe")(process.env.STRIPE_S_ID);
 
 const router = Router();
 
 router.post("/subscription", async (req, res) => {
   const { email, paymentMethodId, number } = req.body;
+  const data = req.body;
+  console.log(email, paymentMethodId, number);
 
   try {
+    const timeStamp = new Date().getTime();
     // Create a new customer
     const customer = await stripe.customers.create({
       email: email,
@@ -30,11 +35,41 @@ router.post("/subscription", async (req, res) => {
       expand: ["latest_invoice.payment_intent"],
     });
 
+    console.log(subscription.id, subscription.customer, subscription.quantity);
+
+    const paymentInfo = {
+      subscriptionId: subscription.id,
+      customerId: subscription.customer,
+      quantity: subscription.quantity,
+    };
+
+    const updatePlanParams = {
+      TableName: "company_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#paymentInfo": "paymentInfo",
+        "#state": "state",
+      },
+      ExpressionAttributeValues: {
+        ":paymentInfo": paymentInfo,
+        ":state": "paid",
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #paymentInfo = :paymentInfo, #state = :state, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    const result = await dynamoDb.update(updatePlanParams).promise();
+
     return res.status(200).json({ statusCode: 200, body: subscription });
   } catch (error) {
+    console.log("err", error);
     return res.status(200).json({
       statusCode: 400,
-      body: JSON.stringify({ error: error.message }),
+      body: { error: error },
     });
   }
 });

@@ -24,22 +24,22 @@ router.post("/create", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }
 
-    const companyStateCheckParam = {
-      TableName: "company_list",
-      Key: {
-        id: data.companyInfo.organization_id,
-      },
-    };
+    // const companyStateCheckParam = {
+    //   TableName: "company_list",
+    //   Key: {
+    //     id: data.companyInfo.organization_id,
+    //   },
+    // };
 
-    const companyData = await dynamoDb.get(companyStateCheckParam).promise();
-    console.log(companyData);
-    if (companyData.Item.state === "free" && data.staffAmount === 3) {
-      return res.status(200).json({
-        statusCode: 400,
-        type: "free",
-        message: "You have to upgrade your plan to add staffs further.",
-      });
-    }
+    // const companyData = await dynamoDb.get(companyStateCheckParam).promise();
+    // console.log(companyData);
+    // if (companyData.Item.state === "free" && data.staffAmount === 3) {
+    //   return res.status(200).json({
+    //     statusCode: 400,
+    //     type: "free",
+    //     message: "You have to upgrade your plan to add staffs further.",
+    //   });
+    // }
 
     const pin = Math.floor(1000 + Math.random() * 9000);
     var result = "";

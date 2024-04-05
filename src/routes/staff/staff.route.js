@@ -50,12 +50,37 @@ router.post("/create", async (req, res) => {
       result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
 
+    let avatar = process.env.DEFAULT_AVATAR;
+
+    if (data.avatar) {
+      var buf = Buffer.from(
+        data.avatar.replace(/^data:image\/\w+;base64,/, ""),
+        "base64"
+      );
+      const type = data.avatar.split(";")[0].split("/")[1];
+      const params = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: `Home/Avatars/${data.companyInfo.organization_id}/avatar${timeStamp}.${type}`,
+        Body: buf,
+        ACL: "public-read",
+        ContentEncoding: "base64",
+        ContentType: `image/${type}`,
+      };
+      try {
+        const uploadData = await s3bucket.upload(params).promise();
+        avatar = uploadData.Location;
+      } catch (error) {
+        console.log(error);
+        return res.status(200).json({ statusCode: 500, error });
+      }
+    }
+
     let Item = {
       id: timeStamp.toString(),
       organization_id: data.companyInfo.organization_id,
       email: data.email,
       name: data.name,
-      avatar: process.env.DEFAULT_AVATAR,
+      avatar: avatar,
       pin: pin,
       role: data.role,
       level: data.level,
@@ -236,14 +261,15 @@ router.post("/update", async (req, res) => {
       return res.status(200).json({ statusCode: 400, message: "Bad Request" });
     }
 
-    let location = "";
+    let location = data.avatar;
+    let email = data.old_email;
 
-    if (data.avatar) {
+    if (data.base64) {
       var buf = Buffer.from(
-        data.avatar.replace(/^data:image\/\w+;base64,/, ""),
+        data.base64.replace(/^data:image\/\w+;base64,/, ""),
         "base64"
       );
-      const type = data.avatar.split(";")[0].split("/")[1];
+      const type = data.base64.split(";")[0].split("/")[1];
       const params = {
         Bucket: process.env.S3_BUCKET_NAME,
         Key: `Home/Avatars/${data.organization_id}/avatar${timeStamp}.${type}`,
@@ -261,61 +287,58 @@ router.post("/update", async (req, res) => {
       }
     }
 
-    const params = data.avatar
-      ? {
-          TableName: "staff_list",
-          Key: {
-            id: data.id,
+    if (data.email) {
+      email = data.email;
+      const { USER_POOL_ID } = process.env;
+
+      const params = {
+        UserPoolId: USER_POOL_ID,
+        Username: data.old_email,
+        UserAttributes: [
+          {
+            Name: "email",
+            Value: data.email,
           },
-          ExpressionAttributeNames: {
-            "#name_text": "name",
-            "#role_text": "role",
-            "#avatar": "avatar",
-            "#birth": "birth",
-            "#pin": "pin",
-            "#type": "type",
-            "#state": "state",
+          {
+            Name: "email_verified",
+            Value: "false",
           },
-          ExpressionAttributeValues: {
-            ":name": data.name,
-            ":role": data.role,
-            ":type": data.type,
-            ":avatar": location,
-            ":birth": data.birth,
-            ":pin": data.pin,
-            ":state": true,
-            ":updateAt": timeStamp,
-          },
-          UpdateExpression:
-            "SET #name_text = :name, #role_text = :role, #type = :type, #avatar = :avatar, #birth = :birth, #pin = :pin, #state = :state, updateAt = :updateAt",
-          ReturnValues: "ALL_NEW",
-        }
-      : {
-          TableName: "staff_list",
-          Key: {
-            id: data.id,
-          },
-          ExpressionAttributeNames: {
-            "#name_text": "name",
-            "#role_text": "role",
-            "#birth": "birth",
-            "#pin": "pin",
-            "#type": "type",
-            "#state": "state",
-          },
-          ExpressionAttributeValues: {
-            ":name": data.name,
-            ":role": data.role,
-            ":type": data.type,
-            ":birth": data.birth,
-            ":pin": data.pin,
-            ":state": true,
-            ":updateAt": timeStamp,
-          },
-          UpdateExpression:
-            "SET #name_text = :name, #role_text = :role, #type = :type, #birth = :birth, #pin = :pin, #state = :state, updateAt = :updateAt",
-          ReturnValues: "ALL_NEW",
-        };
+        ],
+      };
+
+      await cognito.adminUpdateUserAttributes(params).promise();
+    }
+
+    const params = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#name_text": "name",
+        "#role_text": "role",
+        "#avatar": "avatar",
+        "#email": "email",
+        "#birth": "birth",
+        "#pin": "pin",
+        "#type": "type",
+        "#state": "state",
+      },
+      ExpressionAttributeValues: {
+        ":name": data.name,
+        ":role": data.role,
+        ":type": data.type,
+        ":avatar": location,
+        ":email": email,
+        ":birth": data.birth,
+        ":pin": data.pin,
+        ":state": true,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #name_text = :name, #role_text = :role, #type = :type, #avatar = :avatar, #email = :email, #birth = :birth, #pin = :pin, #state = :state, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
 
     await dynamoDb.update(params).promise();
 

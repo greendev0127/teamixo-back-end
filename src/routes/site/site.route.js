@@ -108,6 +108,56 @@ router.post("/update", async (req, res) => {
   }
 });
 
+router.post("/update-v1", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const params = {
+      TableName: "site_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#name_text": "name",
+        "#description_text": "description",
+        "#round": "round",
+        "#radius": "radius",
+        "#remote": "remote",
+        "#address": "address",
+        "#lat": "lat",
+        "#lng": "lng",
+      },
+      ExpressionAttributeValues: {
+        ":name": data.name,
+        ":description": data.description,
+        ":round": data.round,
+        ":radius": data.radius,
+        ":remote": data.remote,
+        ":address": data.address,
+        ":lat": data.lat,
+        ":lng": data.lng,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #name_text = :name, #description_text = :description, #round = :round, #radius = :radius, #remote = :remote, #address = :address, #lat = :lat, #lng = :lng, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(params).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Site data has been successfully updated",
+    });
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
 router.post("/location", async (req, res) => {
   try {
     const timeStamp = new Date().getTime();

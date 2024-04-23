@@ -411,7 +411,7 @@ router.post("/updatetrack", async (req, res) => {
         ExpressionAttributeValues: {
           ":date": moment(item.start_date).format("YYYY-MM-DD"),
           ":start_date": item.start_date,
-          ":end_date": item.end_date,
+          ":end_date": item.end_date ? item.end_date : null,
           ":status": item.status,
           ":total_time": item.total_time,
           ":updateAt": timeStamp,

@@ -138,7 +138,7 @@ router.post("/create", async (req, res) => {
     const inviteLink =
       data.level === 2
         ? "https://app.teamixo.com/invite/" + Item.id
-        : "https://user.teamixo.com/invite/" + Item.id;
+        : "https://teamixo-user-v1-0-beta1.vercel.app/invite/" + Item.id;
 
     var emailParams = {
       Destination: {

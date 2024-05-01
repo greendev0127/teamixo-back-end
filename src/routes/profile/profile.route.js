@@ -4,6 +4,7 @@ const uuid = require("uuid");
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const s3bucket = new AWS.S3();
+const cognito = new AWS.CognitoIdentityServiceProvider();
 
 const router = Router();
 
@@ -70,6 +71,96 @@ router.post("/update", async (req, res) => {
     return res.status(200).json({
       statusCode: 200,
       message: "Profile data has been successfully updated",
+    });
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
+router.post("/update-v1", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    let location = data.avatar;
+    let email = data.old_email;
+
+    if (data.base64) {
+      var buf = Buffer.from(
+        data.base64.replace(/^data:image\/\w+;base64,/, ""),
+        "base64"
+      );
+      const type = data.base64.split(";")[0].split("/")[1];
+      const params = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: `Home/Avatars/${data.organization_id}/avatar${timeStamp}.${type}`,
+        Body: buf,
+        ACL: "public-read",
+        ContentEncoding: "base64",
+        ContentType: `image/${type}`,
+      };
+      try {
+        const uploadData = await s3bucket.upload(params).promise();
+        location = uploadData.Location;
+      } catch (error) {
+        console.log(error);
+        return res.status(200).json({ statusCode: 500, error });
+      }
+    }
+
+    if (data.email) {
+      email = data.email;
+      const { USER_POOL_ID } = process.env;
+
+      const params = {
+        UserPoolId: USER_POOL_ID,
+        Username: data.old_email,
+        UserAttributes: [
+          {
+            Name: "email",
+            Value: data.email,
+          },
+          {
+            Name: "email_verified",
+            Value: "false",
+          },
+        ],
+      };
+
+      await cognito.adminUpdateUserAttributes(params).promise();
+    }
+
+    const params = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#name_text": "name",
+        "#avatar": "avatar",
+        "#email": "email",
+        "#birth": "birth",
+      },
+      ExpressionAttributeValues: {
+        ":name": data.name,
+        ":avatar": location,
+        ":email": email,
+        ":birth": data.birth,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #name_text = :name, #avatar = :avatar, #email = :email, #birth = :birth, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(params).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Staff data has been successfully updated",
     });
   } catch (error) {
     return res.status(200).json(error);

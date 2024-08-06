@@ -199,6 +199,52 @@ router.post("/addtrack", async (req, res) => {
   }
 });
 
+router.post("/addtrack-v1", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({ statusCode: 400, message: "Bad Request!" });
+    }
+
+    const track_id = timeStamp;
+
+    const promise = data.dateList.map(async (item, index) => {
+      const uid = timeStamp + index + 1;
+
+      const dateParams = {
+        TableName: data.tableName,
+        Item: {
+          id: uid.toString(),
+          track_id: track_id,
+          staff_id: data.staff.id,
+          site_id: data.site.id,
+          date: moment(item.start_date).format("YYYY-MM-DD"),
+          start_date: item.start_date,
+          end_date: item.end_date,
+          total_time: item.total_time,
+          name: data.staff.name,
+          status: item.status,
+          track_type: 1,
+          createdAt: timeStamp,
+          updateAt: timeStamp,
+        },
+      };
+      await dynamoDb.put(dateParams).promise();
+    });
+
+    await Promise.all(promise);
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: `${data.staff.name} track data has been successfully created`,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(200).json(error);
+  }
+});
+
 // router.post("/updatetrack", async (req, res) => {
 //   try {
 //     const timeStamp = new Date().getTime();
@@ -411,7 +457,7 @@ router.post("/updatetrack", async (req, res) => {
         ExpressionAttributeValues: {
           ":date": moment(item.start_date).format("YYYY-MM-DD"),
           ":start_date": item.start_date,
-          ":end_date": item.end_date,
+          ":end_date": item.end_date ? item.end_date : null,
           ":status": item.status,
           ":total_time": item.total_time,
           ":updateAt": timeStamp,
@@ -444,7 +490,7 @@ router.post("/updatetrack", async (req, res) => {
 
     return res.status(200).json({
       statusCode: 200,
-      message: `track data has been successfully updated`,
+      message: `Edit successful`,
     });
   } catch (error) {
     return res.status(200).json(error);

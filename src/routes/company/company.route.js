@@ -17,42 +17,90 @@ router.post("/create", async (req, res) => {
 
     console.log(data);
 
-    const updateParams = {
-      TableName: "company_list",
-      Key: { id: data.organizationId }, // Assuming 'id' is the primary key
-      UpdateExpression:
-        "set #name = :name, organization_id = :orgId, city = :city, country = :country, address = :address, address_sec = :addressSec, postcode = :postcode, telephone = :telephone, email = :email, country_state = :state, #timeZone = :timeZone, logo = :logo, date_format = :dateFormat, #type = :type, round = :round, updateAt = :updateAt",
-      ExpressionAttributeNames: {
-        "#name": "name", // Placeholder for reserved keyword
-        "#timeZone": "timeZone",
-        "#type": "type",
-      },
-      ExpressionAttributeValues: {
-        ":orgId": data.organizationId,
-        ":name": data.name,
-        ":city": data.city,
-        ":country": data.country,
-        ":address": data.address,
-        ":addressSec": data.address_sec,
-        ":postcode": data.postCode,
-        ":telephone": data.telePhone,
-        ":email": data.email,
-        ":state": data.state,
-        ":timeZone": data.timeZone,
-        ":logo": process.env.DEFAULT_COMPANY_LOGO, // Typo in original code: COMAPNY -> COMPANY
-        ":dateFormat": "YYYY-MM-DD",
-        ":type": 1,
-        ":round": 5,
-        ":updateAt": timeStamp,
-      },
-      ReturnValues: "UPDATED_NEW",
+    const Item = {
+      id: data.organizationId,
+      email: data.email,
+      state: "free",
+      name: data.name,
+      city: data.city,
+      country: data.country,
+      address: data.address,
+      address_sec: data.address_sec,
+      postcode: data.postCode,
+      telephone: data.telePhone,
+      organization_id: data.organizationId,
+      country_state: data.state,
+      timeZone: data.timeZone,
+      logo: process.env.DEFAULT_COMPANY_LOGO,
+      date_format: "DD-MM-YYYY",
+      type: 1,
+      round: 5,
+      createAt: timeStamp,
+      updateAt: timeStamp,
     };
 
-    const response = await dynamoDb.update(updateParams).promise();
+    const companyCreateParams = {
+      TableName: "company_list",
+      Item,
+    };
+
+    const response = await dynamoDb.put(companyCreateParams).promise();
 
     return res.status(200).json({
       statusCode: 200,
       message: "success create",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(200).json(error);
+  }
+});
+
+router.post("/create-v1", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status({ statusCode: 400, message: "Bad Request" });
+    }
+
+    const record_table = "record_" + data.organizationId;
+
+    const Item = {
+      id: data.organizationId,
+      email: data.email,
+      state: "free",
+      name: data.name,
+      city: data.city,
+      country: data.country,
+      currency: data.currency,
+      address: data.address,
+      address_sec: data.address_sec,
+      postcode: data.postCode,
+      telephone: data.telePhone,
+      organization_id: data.organizationId,
+      country_state: data.state,
+      timeZone: data.timeZone,
+      logo: process.env.DEFAULT_COMPANY_LOGO,
+      date_format: "DD-MM-YYYY",
+      record_table: record_table,
+      type: 1,
+      round: 5,
+      createAt: timeStamp,
+      updateAt: timeStamp,
+    };
+
+    const companyCreateParams = {
+      TableName: "company_list",
+      Item,
+    };
+
+    const response = await dynamoDb.put(companyCreateParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "success create",
+      data: response,
     });
   } catch (error) {
     console.log(error);
@@ -187,6 +235,81 @@ router.post("/update", async (req, res) => {
       message: "Company data has been successfully updated",
       data: location,
       response: result,
+    });
+  } catch (error) {
+    return res.status(200).json(error);
+  }
+});
+
+router.post("/update-v1", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({ statusCode: 400, message: "Bad Request" });
+    }
+
+    let location = data.logo;
+
+    if (data.base64) {
+      var buf = Buffer.from(
+        data.base64.replace(/^data:image\/\w+;base64,/, ""),
+        "base64"
+      );
+      const type = data.base64.split(";")[0].split("/")[1];
+      const params = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: `Home/Logos/${data.name}/${data.name}_${timeStamp}.${type}`,
+        Body: buf,
+        ACL: "public-read",
+        ContentEncoding: "base64",
+        ContentType: `image/${type}`,
+      };
+      try {
+        const uploadData = await s3bucket.upload(params).promise();
+        location = uploadData.Location;
+      } catch (error) {
+        console.log(error);
+        return res.status(400).json({ statusCode: 500, error });
+      }
+    }
+
+    const params = {
+      TableName: "company_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#name_text": "name",
+        "#type": "type",
+        "#logo": "logo",
+        "#timeZone": "timeZone",
+        "#date_format": "date_format",
+        "#round": "round",
+        "#email": "email",
+        "#telephone": "telephone",
+      },
+      ExpressionAttributeValues: {
+        ":name": data.name,
+        ":type": data.type,
+        ":logo": location,
+        ":timeZone": data.timeZone,
+        ":date_format": data.date_format,
+        ":round": data.round,
+        ":email": data.email,
+        ":telephone": data.telephone,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #name_text = :name, #type = :type, #logo = :logo, #timeZone = :timeZone, #date_format = :date_format, #round = :round, #email = :email, #telephone = :telephone, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(params).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Company data has been successfully updated",
     });
   } catch (error) {
     return res.status(200).json(error);

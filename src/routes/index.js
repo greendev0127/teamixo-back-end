@@ -19,6 +19,7 @@ import log from "./logs";
 import form from "./form";
 import custom from "./custom";
 import payment from "./payment";
+import migration from "./migration";
 
 const router = Router();
 
@@ -41,5 +42,6 @@ router.use("/logs", log);
 router.use("/form", form);
 router.use("/custom", custom);
 router.use("/payment", payment);
+router.use("/migration", migration);
 
 export default router;

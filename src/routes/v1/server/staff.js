@@ -141,4 +141,67 @@ router.post("/update_salary", async (req, res) => {
   }
 });
 
+router.post("/list", async (req, res) => {
+  try {
+    const data = req.body;
+
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request." });
+    }
+
+    const getParams = {
+      TableName: "staff_list",
+      FilterExpression: "#organization_id = :organization_id",
+      ExpressionAttributeNames: {
+        "#organization_id": "organization_id",
+      },
+      ExpressionAttributeValues: {
+        ":organization_id": data.organization_id,
+      },
+    };
+
+    const result = await dynamoDb.scan(getParams).promise();
+
+    return res.status(200).json({ statusCode: 200, body: result.Items });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
+
+router.post("/update_role", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request" });
+    }
+
+    const params = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#role_text": "role",
+      },
+      ExpressionAttributeValues: {
+        ":role": data.department,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression: "SET #role_text = :role, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(params).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Update Successful",
+    });
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+});
+
 export default router;

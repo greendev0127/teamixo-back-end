@@ -2308,6 +2308,46 @@ router.post("/sendemail", async (req, res) => {
     });
   }
 });
+router.post("/join-to-list", async (req, res) => {
+  try {
+    const data = req.body;
+    const timeStamp = new Date().getTime();
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request"
+      });
+    }
+    const Item = data;
+    Item.id = timeStamp.toString();
+    Item.createdAt = timeStamp;
+    Item.updatedAt = timeStamp;
+    const createParams = {
+      TableName: "waitList",
+      Item
+    };
+    await dynamoDb.put(createParams).promise();
+    return res.status(200).json({
+      message: "Join request has been successfully added"
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
+router.get("/get-join-list", async (req, res) => {
+  try {
+    const fetchParmas = {
+      TableName: "waitList"
+    };
+    const joinListData = await dynamoDb.scan(fetchParmas).promise();
+    return res.status(200).json({
+      data: joinListData
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (router);
 
 /***/ }),
@@ -7306,6 +7346,143 @@ router.post("/create", async (req, res) => {
 
 /***/ }),
 
+/***/ "./src/routes/v1/server/department.js":
+/*!********************************************!*\
+  !*** ./src/routes/v1/server/department.js ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var aws_sdk__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! aws-sdk */ "aws-sdk");
+/* harmony import */ var aws_sdk__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(aws_sdk__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! express */ "express");
+/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(express__WEBPACK_IMPORTED_MODULE_1__);
+
+
+const dynamoDb = new (aws_sdk__WEBPACK_IMPORTED_MODULE_0___default().DynamoDB).DocumentClient();
+const router = (0,express__WEBPACK_IMPORTED_MODULE_1__.Router)();
+router.post("/list", async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request."
+      });
+    }
+    const getParams = {
+      TableName: "role_list",
+      FilterExpression: "#organization_id = :organization_id",
+      ExpressionAttributeNames: {
+        "#organization_id": "organization_id"
+      },
+      ExpressionAttributeValues: {
+        ":organization_id": data.organization_id
+      }
+    };
+    const result = await dynamoDb.scan(getParams).promise();
+    return res.status(200).json({
+      statusCode: 200,
+      body: result.Items
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
+router.post("/create", async (req, res) => {
+  try {
+    const data = req.body;
+    const timeStamp = new Date().getTime();
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request"
+      });
+    }
+    let Item = {
+      id: timeStamp.toString(),
+      organization_id: data.organization_id,
+      role: data.department,
+      createAt: timeStamp,
+      updateAt: timeStamp
+    };
+    const createParams = {
+      TableName: "role_list",
+      Item
+    };
+    await dynamoDb.put(createParams).promise();
+    return res.status(200).json({
+      statusCode: 200,
+      message: "New department has been successfully created"
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
+router.post("/update", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request"
+      });
+    }
+    const params = {
+      TableName: "role_list",
+      Key: {
+        id: data.id
+      },
+      ExpressionAttributeNames: {
+        "#role_text": "role"
+      },
+      ExpressionAttributeValues: {
+        ":role": data.department,
+        ":updateAt": timeStamp
+      },
+      UpdateExpression: "SET #role_text = :role, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW"
+    };
+    await dynamoDb.update(params).promise();
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Department has been successfully updated"
+    });
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+});
+router.post("/delete", async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request"
+      });
+    }
+    const deleteDepartmentParams = {
+      TableName: "role_list",
+      Key: {
+        id: data.id
+      }
+    };
+    await dynamoDb.delete(deleteDepartmentParams).promise();
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Department data has been successfilly deleted."
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error.message);
+  }
+});
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (router);
+
+/***/ }),
+
 /***/ "./src/routes/v1/server/index.js":
 /*!***************************************!*\
   !*** ./src/routes/v1/server/index.js ***!
@@ -7322,6 +7499,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _staff__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./staff */ "./src/routes/v1/server/staff.js");
 /* harmony import */ var _company__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./company */ "./src/routes/v1/server/company.js");
 /* harmony import */ var _service__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./service */ "./src/routes/v1/server/service.js");
+/* harmony import */ var _department__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./department */ "./src/routes/v1/server/department.js");
+
 
 
 
@@ -7332,6 +7511,7 @@ router.use("/auth", _auth__WEBPACK_IMPORTED_MODULE_1__["default"]);
 router.use("/staff", _staff__WEBPACK_IMPORTED_MODULE_2__["default"]);
 router.use("/company", _company__WEBPACK_IMPORTED_MODULE_3__["default"]);
 router.use("/service", _service__WEBPACK_IMPORTED_MODULE_4__["default"]);
+router.use("/department", _department__WEBPACK_IMPORTED_MODULE_5__["default"]);
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (router);
 
 /***/ }),
@@ -7457,6 +7637,54 @@ router.post('/getservice', async (req, res) => {
     });
   } catch (error) {
     console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
+router.post("/update", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({
+        statusCode: 400,
+        message: "Bad Request"
+      });
+    }
+    const params = {
+      TableName: "site_list",
+      Key: {
+        id: data.id
+      },
+      ExpressionAttributeNames: {
+        "#name_text": "name",
+        "#description_text": "description",
+        "#round": "round",
+        "#radius": "radius",
+        "#remote": "remote",
+        "#address": "address",
+        "#lat": "lat",
+        "#lng": "lng"
+      },
+      ExpressionAttributeValues: {
+        ":name": data.name,
+        ":description": data.description,
+        ":round": data.round,
+        ":radius": data.radius,
+        ":remote": data.remote,
+        ":address": data.address,
+        ":lat": data.lat,
+        ":lng": data.lng,
+        ":updateAt": timeStamp
+      },
+      UpdateExpression: "SET #name_text = :name, #description_text = :description, #round = :round, #radius = :radius, #remote = :remote, #address = :address, #lat = :lat, #lng = :lng, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW"
+    };
+    await dynamoDb.update(params).promise();
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Service data has been successfully updated"
+    });
+  } catch (error) {
     return res.status(500).json(error);
   }
 });
@@ -7609,6 +7837,67 @@ router.post("/update_salary", async (req, res) => {
     return res.status(500).json({
       message: "Server error"
     });
+  }
+});
+router.post("/list", async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request."
+      });
+    }
+    const getParams = {
+      TableName: "staff_list",
+      FilterExpression: "#organization_id = :organization_id",
+      ExpressionAttributeNames: {
+        "#organization_id": "organization_id"
+      },
+      ExpressionAttributeValues: {
+        ":organization_id": data.organization_id
+      }
+    };
+    const result = await dynamoDb.scan(getParams).promise();
+    return res.status(200).json({
+      statusCode: 200,
+      body: result.Items
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
+router.post("/update_role", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request"
+      });
+    }
+    const params = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id
+      },
+      ExpressionAttributeNames: {
+        "#role_text": "role"
+      },
+      ExpressionAttributeValues: {
+        ":role": data.department,
+        ":updateAt": timeStamp
+      },
+      UpdateExpression: "SET #role_text = :role, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW"
+    };
+    await dynamoDb.update(params).promise();
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Update Successful"
+    });
+  } catch (error) {
+    return res.status(500).json(error);
   }
 });
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (router);

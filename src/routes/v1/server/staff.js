@@ -1,7 +1,10 @@
 import AWS from "aws-sdk";
 import { Router } from "express";
+import { UploadImage } from "../utils/upload-util";
+import { TemporaryPasswordGenerator } from "../utils";
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const cognito = new AWS.CognitoIdentityServiceProvider();
 
 const router = Router();
 
@@ -201,6 +204,86 @@ router.post("/update_role", async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json(error);
+  }
+});
+
+router.post("/create", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request" });
+    }
+
+    const tempPassword = TemporaryPasswordGenerator();
+
+    const params = {
+      UserPoolId: process.env.USER_POOL_ID, // replace with your User Pool ID
+      Username: data.email, // replace with the username
+      TemporaryPassword: tempPassword, // replace with a temporary password
+      UserAttributes: [
+        {
+          Name: "email",
+          Value: data.email, // replace with the user's email
+        },
+        {
+          Name: "email_verified",
+          Value: "true",
+        },
+        {
+          Name: "custom:role",
+          Value: "member",
+        },
+        {
+          Name: "custom:user_id",
+          Value: timeStamp.toString(),
+        },
+        {
+          Name: "custom:level",
+          Value: "3",
+        },
+        {
+          Name: "custom:organization_id",
+          Value: data.organization_id,
+        },
+      ],
+      MessageAction: "SUPPRESS", // suppresses the welcome message
+    };
+    await cognito.adminCreateUser(params).promise();
+
+    const avatarUrl = await UploadImage(
+      data.avatar,
+      data.organization_id,
+      timeStamp
+    );
+
+    let Item = data;
+    Item.level = 3;
+    Item.state = true;
+    Item.avatar = avatarUrl;
+    Item.break_state = false;
+    Item.updateAt = timeStamp;
+    Item.createAt = timeStamp;
+    Item.clocked_state = false;
+    Item.last_start_date = null;
+    Item.password_state = false;
+    Item.id = timeStamp.toString();
+
+    const createStaffParams = {
+      TableName: "staff_list",
+      Item,
+    };
+
+    await dynamoDb.put(createStaffParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Staff has been successfully created.",
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error.message);
   }
 });
 

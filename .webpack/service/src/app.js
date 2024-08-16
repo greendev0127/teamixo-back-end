@@ -7706,9 +7706,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var aws_sdk__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(aws_sdk__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var express__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! express */ "express");
 /* harmony import */ var express__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(express__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _utils_upload_util__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/upload-util */ "./src/routes/v1/utils/upload-util.js");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils */ "./src/routes/v1/utils.js");
+
+
 
 
 const dynamoDb = new (aws_sdk__WEBPACK_IMPORTED_MODULE_0___default().DynamoDB).DocumentClient();
+const cognito = new (aws_sdk__WEBPACK_IMPORTED_MODULE_0___default().CognitoIdentityServiceProvider)();
 const router = (0,express__WEBPACK_IMPORTED_MODULE_1__.Router)();
 router.post("/fetch_staff", async (req, res) => {
   try {
@@ -7900,6 +7905,72 @@ router.post("/update_role", async (req, res) => {
     return res.status(500).json(error);
   }
 });
+router.post("/create", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request"
+      });
+    }
+    const tempPassword = (0,_utils__WEBPACK_IMPORTED_MODULE_3__.TemporaryPasswordGenerator)();
+    const params = {
+      UserPoolId: process.env.USER_POOL_ID,
+      // replace with your User Pool ID
+      Username: data.email,
+      // replace with the username
+      TemporaryPassword: tempPassword,
+      // replace with a temporary password
+      UserAttributes: [{
+        Name: "email",
+        Value: data.email // replace with the user's email
+      }, {
+        Name: "email_verified",
+        Value: "true"
+      }, {
+        Name: "custom:role",
+        Value: "member"
+      }, {
+        Name: "custom:user_id",
+        Value: timeStamp.toString()
+      }, {
+        Name: "custom:level",
+        Value: "3"
+      }, {
+        Name: "custom:organization_id",
+        Value: data.organization_id
+      }],
+      MessageAction: "SUPPRESS" // suppresses the welcome message
+    };
+
+    await cognito.adminCreateUser(params).promise();
+    const avatarUrl = await (0,_utils_upload_util__WEBPACK_IMPORTED_MODULE_2__.UploadImage)(data.avatar, data.organization_id, timeStamp);
+    let Item = data;
+    Item.level = 3;
+    Item.state = true;
+    Item.avatar = avatarUrl;
+    Item.break_state = false;
+    Item.updateAt = timeStamp;
+    Item.createAt = timeStamp;
+    Item.clocked_state = false;
+    Item.last_start_date = null;
+    Item.password_state = false;
+    Item.id = timeStamp.toString();
+    const createStaffParams = {
+      TableName: "staff_list",
+      Item
+    };
+    await dynamoDb.put(createStaffParams).promise();
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Staff has been successfully created."
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error.message);
+  }
+});
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (router);
 
 /***/ }),
@@ -7912,10 +7983,56 @@ router.post("/update_role", async (req, res) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   GeneratePin: () => (/* binding */ GeneratePin)
+/* harmony export */   GeneratePin: () => (/* binding */ GeneratePin),
+/* harmony export */   TemporaryPasswordGenerator: () => (/* binding */ TemporaryPasswordGenerator)
 /* harmony export */ });
 function GeneratePin() {
   return Math.floor(1000 + Math.random() * 9000);
+}
+function TemporaryPasswordGenerator() {
+  var result = "";
+  var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  var charactersLength = characters.length;
+  for (var i = 0; i < 10; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+/***/ }),
+
+/***/ "./src/routes/v1/utils/upload-util.js":
+/*!********************************************!*\
+  !*** ./src/routes/v1/utils/upload-util.js ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   UploadImage: () => (/* binding */ UploadImage)
+/* harmony export */ });
+/* harmony import */ var aws_sdk__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! aws-sdk */ "aws-sdk");
+/* harmony import */ var aws_sdk__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(aws_sdk__WEBPACK_IMPORTED_MODULE_0__);
+
+const s3bucket = new (aws_sdk__WEBPACK_IMPORTED_MODULE_0___default().S3)();
+async function UploadImage(data, organization_id, timeStamp) {
+  var buf = Buffer.from(data.replace(/^data:image\/\w+;base64,/, ""), "base64");
+  const type = data.split(";")[0].split("/")[1];
+  const params = {
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: `Home/Avatars/${organization_id}/avatar${timeStamp}.${type}`,
+    Body: buf,
+    ACL: "public-read",
+    ContentEncoding: "base64",
+    ContentType: `image/${type}`
+  };
+  try {
+    const uploadData = await s3bucket.upload(params).promise();
+    return uploadData.Location;
+  } catch (error) {
+    console.log(error);
+    return error;
+  }
 }
 
 /***/ }),

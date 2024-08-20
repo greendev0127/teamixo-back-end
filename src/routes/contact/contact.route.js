@@ -224,4 +224,48 @@ router.post("/sendemail", async (req, res) => {
   }
 });
 
+router.post("/join-to-list", async (req, res) => {
+  try {
+    const data = req.body;
+    const timeStamp = new Date().getTime();
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request" });
+    }
+
+    const Item = data;
+    Item.id = timeStamp.toString();
+    Item.createdAt = timeStamp;
+    Item.updatedAt = timeStamp;
+
+    const createParams = {
+      TableName: "waitList",
+      Item,
+    };
+
+    await dynamoDb.put(createParams).promise();
+
+    return res
+      .status(200)
+      .json({ message: "Join request has been successfully added" });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
+
+router.get("/get-join-list", async (req, res) => {
+  try {
+    const fetchParmas = {
+      TableName: "waitList",
+    };
+
+    const joinListData = await dynamoDb.scan(fetchParmas).promise();
+
+    return res.status(200).json({ data: joinListData });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
+
 export default router;

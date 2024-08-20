@@ -1,7 +1,10 @@
 import AWS from "aws-sdk";
 import { Router } from "express";
+import { UploadImage } from "../utils/upload-util";
+import { TemporaryPasswordGenerator } from "../utils";
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const cognito = new AWS.CognitoIdentityServiceProvider();
 
 const router = Router();
 
@@ -134,6 +137,295 @@ router.post("/update_salary", async (req, res) => {
 
     return res.status(200).json({
       message: "Staff persional information has been successfully updated",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.post("/list", async (req, res) => {
+  try {
+    const data = req.body;
+
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request." });
+    }
+
+    const getParams = {
+      TableName: "staff_list",
+      FilterExpression: "#organization_id = :organization_id",
+      ExpressionAttributeNames: {
+        "#organization_id": "organization_id",
+      },
+      ExpressionAttributeValues: {
+        ":organization_id": data.organization_id,
+      },
+    };
+
+    const result = await dynamoDb.scan(getParams).promise();
+
+    return res.status(200).json({ statusCode: 200, body: result.Items });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
+
+router.post("/update_role", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request" });
+    }
+
+    const params = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#role_text": "role",
+      },
+      ExpressionAttributeValues: {
+        ":role": data.department,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression: "SET #role_text = :role, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(params).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Update Successful",
+    });
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+});
+
+router.post("/create", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request" });
+    }
+
+    const tempPassword = TemporaryPasswordGenerator();
+
+    const params = {
+      UserPoolId: process.env.USER_POOL_ID, // replace with your User Pool ID
+      Username: data.email, // replace with the username
+      TemporaryPassword: tempPassword, // replace with a temporary password
+      UserAttributes: [
+        {
+          Name: "email",
+          Value: data.email, // replace with the user's email
+        },
+        {
+          Name: "email_verified",
+          Value: "true",
+        },
+        {
+          Name: "custom:role",
+          Value: "member",
+        },
+        {
+          Name: "custom:user_id",
+          Value: timeStamp.toString(),
+        },
+        {
+          Name: "custom:level",
+          Value: "3",
+        },
+        {
+          Name: "custom:organization_id",
+          Value: data.organization_id,
+        },
+      ],
+      MessageAction: "SUPPRESS", // suppresses the welcome message
+    };
+    await cognito.adminCreateUser(params).promise();
+
+    const avatarUrl = await UploadImage(
+      data.avatar.base64,
+      data.organization_id,
+      timeStamp
+    );
+
+    let Item = data;
+    Item.level = 3;
+    Item.state = true;
+    Item.avatar = avatarUrl;
+    Item.break_state = false;
+    Item.updateAt = timeStamp;
+    Item.createAt = timeStamp;
+    Item.clocked_state = false;
+    Item.last_start_date = null;
+    Item.password_state = false;
+    Item.id = timeStamp.toString();
+
+    const createStaffParams = {
+      TableName: "staff_list",
+      Item,
+    };
+
+    await dynamoDb.put(createStaffParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Staff has been successfully created.",
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error.message);
+  }
+});
+
+router.post("/delete", async (req, res) => {
+  try {
+    const data = req.body;
+
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request" });
+    }
+
+    if (data.state) {
+      const params = {
+        UserPoolId: process.env.USER_POOL_ID,
+        Username: data.email,
+      };
+
+      await cognito.adminDeleteUser(params).promise();
+    }
+
+    const deleteStaffParams = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+    };
+
+    await dynamoDb.delete(deleteStaffParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Staff data has been successfilly deleted.",
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error.message);
+  }
+});
+
+router.post("/getstaff", async (req, res) => {
+  try {
+    const data = req.body;
+
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request." });
+    }
+
+    const getParams = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+    };
+
+    const staff = await dynamoDb.get(getParams).promise();
+
+    return res.status(200).json({ statusCode: 200, staff: staff });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
+  }
+});
+
+router.post("/update", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+
+    const data = req.body;
+    if (!data) {
+      return res
+        .status(400)
+        .json({ message: "Bad Request: server can't find the update params!" });
+    }
+
+    let avatarUrl = data.avatar.avatarUrl;
+
+    if (data.avatar.base64) {
+      avatarUrl = await UploadImage(
+        data.avatar.base64,
+        data.organization_id,
+        timeStamp
+      );
+    }
+
+    const updateParams = {
+      TableName: "staff_list",
+      Key: {
+        id: data.id,
+      },
+      ExpressionAttributeNames: {
+        "#address": "address",
+        "#avatar": "avatar",
+        "#birth": "birth",
+        "#city": "city",
+        "#country": "country",
+        "#email": "email",
+        "#emergency_employee": "emergency_employee",
+        "#emergency_name": "emergency_name",
+        "#emergency_phone": "emergency_phone",
+        "#first_name": "first_name",
+        "#gender": "gender",
+        "#last_name": "last_name",
+        "#name": "name",
+        "#phone": "phone",
+        "#pin": "pin",
+        "#postcode": "postcode",
+        "#role": "role",
+        "#salary": "salary",
+        "#type": "type",
+      },
+      ExpressionAttributeValues: {
+        ":address": data.address,
+        ":avatar": avatarUrl,
+        ":birth": data.birth,
+        ":city": data.city,
+        ":country": data.country,
+        ":email": data.email,
+        ":emergency_employee": data.emergency_employee,
+        ":emergency_name": data.emergency_name,
+        ":emergency_phone": data.emergency_phone,
+        ":first_name": data.first_name,
+        ":gender": data.gender,
+        ":last_name": data.last_name,
+        ":name": data.name,
+        ":phone": data.phone,
+        ":pin": data.pin,
+        ":postcode": data.postcode,
+        ":role": data.role,
+        ":salary": data.salary,
+        ":type": data.type,
+        ":updateAt": timeStamp,
+      },
+      UpdateExpression:
+        "SET #address = :address, #avatar = :avatar, #birth = :birth, #city = :city, #country = :country, #email = :email, #emergency_employee = :emergency_employee, #emergency_name = :emergency_name, #emergency_phone = :emergency_phone, #first_name = :first_name, #gender = :gender, #last_name = :last_name, #name = :name, #phone = :phone, #pin = :pin, #postcode = :postcode, #role = :role, #salary = :salary, #type = :type, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW",
+    };
+
+    await dynamoDb.update(updateParams).promise();
+
+    return res.status(200).json({
+      statusCode: 200,
+      message: "Staff has been successfully updated.",
     });
   } catch (error) {
     console.log(error);

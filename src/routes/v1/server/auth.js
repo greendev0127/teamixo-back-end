@@ -170,7 +170,7 @@ router.post("/verify-email", async (req, res) => {
       response: response,
     });
   } catch (error) {
-    console.error("An error occured:", error);
+    console.error("An error occurred:", error);
     res.status(500).json({
       message: "Verification code is not correct",
       error: error,
@@ -182,7 +182,6 @@ router.post("/getMe", async (req, res) => {
   try {
     const data = req.body;
 
-    console.log(data);
     if (!data) {
       return res.status(400).json({ statusCode: 400, message: "Bad Request" });
     }
@@ -205,7 +204,7 @@ router.post("/getMe", async (req, res) => {
 
     return res.status(200).json(response);
   } catch (error) {
-    console.log("Error occured: ", error);
+    console.log("Error occurred: ", error);
     return res.status(500).json(error);
   }
 });

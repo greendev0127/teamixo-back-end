@@ -22,6 +22,7 @@ router.post("/list", async (req, res) => {
         ":organization_id": data.organizationId,
       },
     };
+
     const result = await dynamoDb.scan(params).promise();
     const response = {
       statusCode: 200,
@@ -38,85 +39,85 @@ router.post("/list", async (req, res) => {
 router.post("/create", async (req, res) => {
   try {
     const timeStamp = new Date().getTime();
-    const data = req.body
+    const data = req.body;
 
-    if(!data) {
-      return res.status(400).json({message: "Bad Requrest!"})
+    if (!data) {
+      return res.status(400).json({ message: "Bad Requrest!" });
     }
 
-    let Item = data
-    Item.id = timeStamp.toString()
+    let Item = data;
+    Item.id = timeStamp.toString();
     Item.createAt = timeStamp;
-    Item.updateAt = timeStamp
-    Item.table_name = 'record_' + data.organization_id
+    Item.updateAt = timeStamp;
+    Item.table_name = "record_" + data.organization_id;
 
     const createServiceParams = {
       TableName: "site_list",
-      Item
-    }
+      Item,
+    };
 
-    await dynamoDb.put(createServiceParams).promise()
+    await dynamoDb.put(createServiceParams).promise();
 
     return res.status(200).json({
       statusCode: 200,
-      message: "Service has been successfully created."
-    })
-  } catch(error) {
-    console.log("Error occurred: ", error)
-    return res.state(500).json(error.message)
+      message: "Service has been successfully created.",
+    });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.state(500).json(error.message);
   }
-})
+});
 
 router.post("/delete", async (req, res) => {
   try {
-    const data = req.body
+    const data = req.body;
 
-    if(!data) {
-      return res.status(400).json({message: "Bad Request"})
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request" });
     }
-    
+
     const deleteServiceParams = {
       TableName: "site_list",
       Key: {
-        id: data.id
-      }
+        id: data.id,
+      },
     };
 
-    await dynamoDb.delete(deleteServiceParams).promise()
+    await dynamoDb.delete(deleteServiceParams).promise();
 
     return res.status(200).json({
       statusCode: 200,
-      message: "Service data has been successfilly deleted."
-    })
+      message: "Service data has been successfilly deleted.",
+    });
   } catch (error) {
-    console.log("Error occurred: ", error)
-    return res.status(500).json(error.message)
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error.message);
   }
-})
+});
 
-router.post('/getservice', async (req, res) => {
+router.post("/getservice", async (req, res) => {
   try {
-    const data = req.body
-    
-    if(!data) {
-      return res.status(400).json({message: "Bad Request."})
+    const data = req.body;
+
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request." });
     }
 
     const getParams = {
-      TableName: 'site_list',
+      TableName: "site_list",
       Key: {
-        id: data.id
-      }
-    }
+        id: data.id,
+      },
+    };
 
-    const service = await dynamoDb.get(getParams).promise()
+    const service = await dynamoDb.get(getParams).promise();
 
-    return res.status(200).json({statusCode: 200, service: service})
-  } catch(error) {
-    console.log("Error occurred: ", error)
-    return res.status(500).json(error)
+    return res.status(200).json({ statusCode: 200, service: service });
+  } catch (error) {
+    console.log("Error occurred: ", error);
+    return res.status(500).json(error);
   }
-})
+});
 
 router.post("/update", async (req, res) => {
   try {

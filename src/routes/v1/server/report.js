@@ -101,6 +101,56 @@ router.post("/delete", async (req, res) => {
   }
 });
 
+router.post("/get_track", async (req, res) => {
+  try {
+    const data = req.body;
+
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request" });
+    }
+
+    const getTrackParams = {
+      TableName: data.table_name,
+      FilterExpression: "#track_id = :track_id",
+      ExpressionAttributeNames: {
+        "#track_id": "track_id",
+      },
+      ExpressionAttributeValues: {
+        ":track_id": data.track_id,
+      },
+    };
+
+    const tracks = await dynamoDb.scan(getTrackParams).promise();
+
+    const getServiceParams = {
+      TableName: "site_list",
+      Key: {
+        id: tracks.Items[0].site_id,
+      },
+    };
+
+    const service = await dynamoDb.get(getServiceParams).promise();
+
+    const getStaffParams = {
+      TableName: "staff_list",
+      Key: {
+        id: tracks.Items[0].staff_id,
+      },
+    };
+
+    const staff = await dynamoDb.get(getStaffParams).promise();
+
+    return res.status(200).json({
+      tracks: tracks.Items,
+      service: service.Item,
+      staff: staff.Item,
+    });
+  } catch (err) {
+    console.log("Error is occurred: ", err);
+    return res.status(500).json(err);
+  }
+});
+
 // ---------------------------------------------------
 
 async function queryAndDeleteDynamoDB(params) {

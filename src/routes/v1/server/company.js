@@ -67,4 +67,28 @@ router.post("/create", async (req, res) => {
   }
 });
 
+router.post("/getCompanyInfo", async (req, res) => {
+  try {
+    const data = req.body;
+
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request!" });
+    }
+
+    const getCompanyParams = {
+      TableName: "company_list",
+      Key: {
+        id: data.id,
+      },
+    };
+
+    const companyInfo = await dynamoDb.get(getCompanyParams).promise();
+
+    return res.status(200).json({ statusCode: 200, companyInfo: companyInfo });
+  } catch (error) {
+    console.log("Error is occurred in get company information: ", error);
+    return res.status(500).json(error);
+  }
+});
+
 export default router;

@@ -105,6 +105,8 @@ router.post("/get_track", async (req, res) => {
   try {
     const data = req.body;
 
+    console.log(data);
+
     if (!data) {
       return res.status(400).json({ message: "Bad Request" });
     }
@@ -121,6 +123,8 @@ router.post("/get_track", async (req, res) => {
     };
 
     const tracks = await dynamoDb.scan(getTrackParams).promise();
+
+    console.log(tracks);
 
     const getServiceParams = {
       TableName: "site_list",
@@ -148,6 +152,32 @@ router.post("/get_track", async (req, res) => {
   } catch (err) {
     console.log("Error is occurred: ", err);
     return res.status(500).json(err);
+  }
+});
+
+router.post("/get_locations", async (req, res) => {
+  try {
+    const data = req.body;
+
+    console.log(data);
+
+    if (!data) {
+      return res.status(400).json({ message: "Bad Request" });
+    }
+
+    const getLocationParams = {
+      TableName: "clock_location",
+      Key: {
+        id: data.id,
+      },
+    };
+
+    const locationData = await dynamoDb.get(getLocationParams).promise();
+
+    return res.status(200).json(locationData);
+  } catch (error) {
+    console.log("Error is occurred: ", error);
+    return res.status(500).json(error);
   }
 });
 

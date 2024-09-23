@@ -7049,15 +7049,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! express */ "express");
 /* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(express__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _books_route__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./books.route */ "./src/routes/v1/books.route.js");
+/* harmony import */ var _user__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./user */ "./src/routes/v1/user/index.js");
 /* harmony import */ var _admin__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./admin */ "./src/routes/v1/admin/index.js");
 /* harmony import */ var _server__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./server */ "./src/routes/v1/server/index.js");
+/* harmony import */ var _books_route__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./books.route */ "./src/routes/v1/books.route.js");
+
 
 
 
 
 const router = (0,express__WEBPACK_IMPORTED_MODULE_0__.Router)();
-router.use("/books", _books_route__WEBPACK_IMPORTED_MODULE_1__["default"]);
+router.use("/user", _user__WEBPACK_IMPORTED_MODULE_1__["default"]);
+router.use("/books", _books_route__WEBPACK_IMPORTED_MODULE_4__["default"]);
 router.use("/admin", _admin__WEBPACK_IMPORTED_MODULE_2__["default"]);
 router.use("/server", _server__WEBPACK_IMPORTED_MODULE_3__["default"]);
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (router);
@@ -7358,6 +7361,30 @@ router.post("/create", async (req, res) => {
     return res.status(500).json(error);
   }
 });
+router.post("/getCompanyInfo", async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request!"
+      });
+    }
+    const getCompanyParams = {
+      TableName: "company_list",
+      Key: {
+        id: data.id
+      }
+    };
+    const companyInfo = await dynamoDb.get(getCompanyParams).promise();
+    return res.status(200).json({
+      statusCode: 200,
+      companyInfo: companyInfo
+    });
+  } catch (error) {
+    console.log("Error is occurred in get company information: ", error);
+    return res.status(500).json(error);
+  }
+});
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (router);
 
 /***/ }),
@@ -7649,6 +7676,7 @@ router.post("/delete", async (req, res) => {
 router.post("/get_track", async (req, res) => {
   try {
     const data = req.body;
+    console.log(data);
     if (!data) {
       return res.status(400).json({
         message: "Bad Request"
@@ -7665,6 +7693,7 @@ router.post("/get_track", async (req, res) => {
       }
     };
     const tracks = await dynamoDb.scan(getTrackParams).promise();
+    console.log(tracks);
     const getServiceParams = {
       TableName: "site_list",
       Key: {
@@ -7687,6 +7716,28 @@ router.post("/get_track", async (req, res) => {
   } catch (err) {
     console.log("Error is occurred: ", err);
     return res.status(500).json(err);
+  }
+});
+router.post("/get_locations", async (req, res) => {
+  try {
+    const data = req.body;
+    console.log(data);
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request"
+      });
+    }
+    const getLocationParams = {
+      TableName: "clock_location",
+      Key: {
+        id: data.id
+      }
+    };
+    const locationData = await dynamoDb.get(getLocationParams).promise();
+    return res.status(200).json(locationData);
+  } catch (error) {
+    console.log("Error is occurred: ", error);
+    return res.status(500).json(error);
   }
 });
 
@@ -8302,6 +8353,285 @@ router.post("/update", async (req, res) => {
 
 /***/ }),
 
+/***/ "./src/routes/v1/user/clock.js":
+/*!*************************************!*\
+  !*** ./src/routes/v1/user/clock.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var aws_sdk__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! aws-sdk */ "aws-sdk");
+/* harmony import */ var aws_sdk__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(aws_sdk__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! express */ "express");
+/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(express__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! moment */ "moment");
+/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(moment__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _utils_clock_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils/clock-utils */ "./src/routes/v1/utils/clock-utils.js");
+
+
+
+
+const dynamoDb = new (aws_sdk__WEBPACK_IMPORTED_MODULE_0___default().DynamoDB).DocumentClient();
+const router = (0,express__WEBPACK_IMPORTED_MODULE_1__.Router)();
+router.post("/start", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request!"
+      });
+    }
+    const checkParams = {
+      TableName: "staff_list",
+      Key: {
+        id: data.staff.id
+      }
+    };
+    const checkResult = await dynamoDb.get(checkParams).promise();
+    if (checkResult.Item.clock_state) {
+      return res.status(400).json({
+        message: "This staff already clocked in"
+      });
+    }
+    const uid = timeStamp.toString();
+    const createTrackParams = {
+      TableName: data.tableName,
+      Item: {
+        id: uid,
+        track_id: uid,
+        staff_id: data.staff.id,
+        site_id: data.siteId,
+        date: moment__WEBPACK_IMPORTED_MODULE_2___default()(timeStamp).format("YYYY-MM-DD"),
+        workPosition: data.workPosition,
+        start_date: (0,_utils_clock_utils__WEBPACK_IMPORTED_MODULE_3__.roundToNearestFiveMinutes)(timeStamp, data.round),
+        end_date: null,
+        total_time: null,
+        name: data.staff.name,
+        status: "start",
+        createdAt: timeStamp,
+        updateAt: timeStamp
+      }
+    };
+    await dynamoDb.put(createTrackParams).promise();
+    if (data.workPosition) {
+      const newLocation = [];
+      const updateWorkPosition = {
+        ...data.workPosition,
+        time: timeStamp
+      };
+      newLocation.push(updateWorkPosition);
+      const createLocationParam = {
+        TableName: 'clock_location',
+        Item: {
+          id: uid,
+          locations: newLocation,
+          createdAt: timeStamp,
+          updateAt: timeStamp
+        }
+      };
+      await dynamoDb.put(createLocationParam).promise();
+    }
+    const updateStaffParams = {
+      TableName: "staff_list",
+      Key: {
+        id: data.staff.id
+      },
+      ExpressionAttributeNames: {
+        "#clocked_state": "clocked_state",
+        "#break_state": "break_state",
+        "#track_id": "track_id",
+        "#record_id": "record_id",
+        "#site_id": "site_id",
+        "#last_start_date": "last_start_date"
+      },
+      ExpressionAttributeValues: {
+        ":clocked_state": true,
+        ":break_state": false,
+        ":track_id": uid,
+        ":record_id": uid,
+        ":site_id": data.siteId,
+        ":last_start_date": (0,_utils_clock_utils__WEBPACK_IMPORTED_MODULE_3__.roundToNearestFiveMinutes)(timeStamp, data.round),
+        ":updateAt": timeStamp
+      },
+      UpdateExpression: "SET #clocked_state = :clocked_state, #break_state = :break_state, #track_id = :track_id, #record_id = :record_id, #site_id = :site_id, #last_start_date = :last_start_date, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW"
+    };
+    const result = await dynamoDb.update(updateStaffParams).promise();
+    return res.status(200).json({
+      message: "New track has been created."
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json(error);
+  }
+});
+router.post("/end-v1", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    if (!data) {
+      return res.status(200).json({
+        statusCode: 400,
+        message: "Bad Request!"
+      });
+    }
+    const checkParams = {
+      TableName: "staff_list",
+      Key: {
+        id: data.staff.id
+      }
+    };
+    const checkResult = await dynamoDb.get(checkParams).promise();
+    if (!checkResult.Item.clocked_state) {
+      return res.status(200).json({
+        statusCode: 400,
+        message: "This staff doesn't clock in yet."
+      });
+    }
+    //calculate the total time from start work to start break
+    var differenceInMs = (0,_utils_clock_utils__WEBPACK_IMPORTED_MODULE_3__.roundToNearestFiveMinutes)(timeStamp, data.round) - data.staff.last_start_date;
+    var total_time = differenceInMs;
+    const uid = timeStamp.toString();
+    // update the start state record with total time and end time
+    const updateParams = {
+      TableName: data.tableName,
+      Key: {
+        id: data.staff.record_id
+      },
+      ExpressionAttributeNames: {
+        "#end_date": "end_date",
+        "#total_time": "total_time"
+      },
+      ExpressionAttributeValues: {
+        ":end_date": (0,_utils_clock_utils__WEBPACK_IMPORTED_MODULE_3__.roundToNearestFiveMinutes)(timeStamp, data.round),
+        ":total_time": total_time,
+        ":updateAt": timeStamp
+      },
+      UpdateExpression: "SET #end_date = :end_date, #total_time = :total_time, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW"
+    };
+    await dynamoDb.update(updateParams).promise();
+
+    // add new record to report table with break state
+    const addParams = {
+      TableName: data.tableName,
+      Item: {
+        id: uid,
+        track_id: data.staff.track_id,
+        staff_id: data.staff.id,
+        site_id: data.siteId,
+        date: moment__WEBPACK_IMPORTED_MODULE_2___default()(timeStamp).format("YYYY-MM-DD"),
+        workPosition: data.workPosition,
+        start_date: (0,_utils_clock_utils__WEBPACK_IMPORTED_MODULE_3__.roundToNearestFiveMinutes)(timeStamp, data.round),
+        total_time: 0,
+        name: data.staff.name,
+        status: "end",
+        createdAt: timeStamp,
+        updateAt: timeStamp
+      }
+    };
+    await dynamoDb.put(addParams).promise();
+    const updateUserParam = {
+      TableName: "staff_list",
+      Key: {
+        id: data.staff.id
+      },
+      ExpressionAttributeNames: {
+        "#clocked_state": "clocked_state",
+        "#break_state": "break_state",
+        "#record_id": "record_id",
+        "#site_id": "site_id",
+        "#last_start_date": "last_start_date"
+      },
+      ExpressionAttributeValues: {
+        ":clocked_state": false,
+        ":break_state": false,
+        ":record_id": null,
+        ":site_id": null,
+        ":last_start_date": null,
+        ":updateAt": timeStamp
+      },
+      UpdateExpression: "SET #clocked_state = :clocked_state, #break_state = :break_state, #record_id = :record_id, #site_id = :site_id, #last_start_date = :last_start_date, updateAt = :updateAt",
+      ReturnValues: "ALL_NEW"
+    };
+    const result = await dynamoDb.update(updateUserParam).promise();
+    const response = {
+      stsatusCode: 200,
+      body: result.Attributes
+    };
+    return res.status(200).json(response);
+  } catch (error) {
+    console.log(error);
+    return res.status(200).json(error);
+  }
+});
+router.post("/update_location", async (req, res) => {
+  try {
+    const timeStamp = new Date().getTime();
+    const data = req.body;
+    console.log(data);
+    if (!data) {
+      return res.status(400).json({
+        message: "Bad Request"
+      });
+    }
+    const updateWorkPosition = {
+      ...data.location,
+      time: timeStamp
+    };
+    const updateLocationParams = {
+      TableName: 'clock_location',
+      Key: {
+        id: data.id
+      },
+      UpdateExpression: "SET #loc = list_append(#loc, :newValue), updateAt = :updateAt",
+      ExpressionAttributeNames: {
+        "#loc": "locations"
+      },
+      ExpressionAttributeValues: {
+        ":newValue": [updateWorkPosition],
+        ":updateAt": timeStamp
+      },
+      ReturnValues: "UPDATED_NEW"
+    };
+    const locations = await dynamoDb.update(updateLocationParams).promise();
+    return res.status(200).json({
+      data: locations
+    });
+  } catch (error) {
+    console.log("Error is occurred in update locations: ", error);
+    return res.status(500).json(error);
+  }
+});
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (router);
+
+/***/ }),
+
+/***/ "./src/routes/v1/user/index.js":
+/*!*************************************!*\
+  !*** ./src/routes/v1/user/index.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! express */ "express");
+/* harmony import */ var express__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(express__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _clock__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./clock */ "./src/routes/v1/user/clock.js");
+
+
+const router = (0,express__WEBPACK_IMPORTED_MODULE_0__.Router)();
+router.use("/clock", _clock__WEBPACK_IMPORTED_MODULE_1__["default"]);
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (router);
+
+/***/ }),
+
 /***/ "./src/routes/v1/utils.js":
 /*!********************************!*\
   !*** ./src/routes/v1/utils.js ***!
@@ -8324,6 +8654,24 @@ function TemporaryPasswordGenerator() {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
+}
+
+/***/ }),
+
+/***/ "./src/routes/v1/utils/clock-utils.js":
+/*!********************************************!*\
+  !*** ./src/routes/v1/utils/clock-utils.js ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   roundToNearestFiveMinutes: () => (/* binding */ roundToNearestFiveMinutes)
+/* harmony export */ });
+function roundToNearestFiveMinutes(date, round) {
+  const ms = 1000 * 60 * round; // convert 5 minutes to milliseconds
+  const roundedDate = new Date(Math.round(date / ms) * ms);
+  return roundedDate.getTime();
 }
 
 /***/ }),
